@@ -1,71 +1,84 @@
-# Memory — Hero Reveal, Scroll Curtain Transition & GlobalNav Architecture
+# Memory — Page 2 Liquid Glass Carousel with Video Autoplay & Scroll Entrance
 
-Last updated: 2026-09-19 16:16:00
+Last updated: 2026-09-19 16:35:00
 
 ## What was built
 
-- **Global Navigation Layer (`src/app/components/GlobalNav.tsx`):**
-  - Created a persistent, fixed navigation component (`fixed top-0 left-0 w-full z-40 pointer-events-none`) that seamlessly bridges the Hero and Page 2 sections.
-  - Controls the main brand heading (`ADARSH'25`) with `BlurText` on mount.
-  - On scrolling from Hero into Page 2, the main heading smoothly scales down (`scale: 0.22` on desktop, `scale: 0.36` on mobile) and translates to the top-left corner (`x: 18px / 10px`, `y: 12px / 8px`), transitioning color from `#ffffff` to solid deep black (`#080808`).
-  - Right-hand navigation items (`DESIGN — FOLIO`, `(CONTACT)`, `(ABOUT)`) fade in to `opacity: 1`, dynamically calculated to align on the exact vertical centerline of the scaled `ADARSH'25` title:
-    - **Desktop (`>= 768px`)**: Displays `DESIGN — FOLIO`, `(CONTACT)`, and `(ABOUT)`.
-    - **Mobile (`< 768px`)**: Exclusively displays `(CONTACT)` (`DESIGN — FOLIO` and `(ABOUT)` hidden via `hidden md:inline-block`).
-  - Integrated `LetterSwapPingPong` on all right nav items to match the typography and hover micro-interaction of the Hero section (`font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]`).
-  - Clicking the scaled `ADARSH'25` logo triggers a smooth scroll back to the top.
+- **WebGL Video Texture Engine (`src/components/originkit/ui/liquid-glass-carousel-custom-style.tsx`):**
+  - Upgraded `LiquidGlassCarousel` texture loader to detect video source paths (`/\.(webm|mp4|mov|ogg)($|\?)/i`).
+  - Automatically instantiates and manages background HTML5 `<video>` elements configured for seamless autoplay (`autoplay`, `loop`, `muted`, `defaultMuted`, `playsInline`).
+  - Added user interaction autoplay unlock listener (`pointerdown`, `touchstart`) as a fallback if browser autoplay policy delays playback.
+  - Binds each video to a `THREE.VideoTexture` rendered at 60fps with `SRGBColorSpace`.
+  - Dynamically captures `videoWidth` and `videoHeight` from `loadedmetadata` to adjust aspect ratios and UV cover window coordinates.
+  - Added thorough video lifecycle management (`ownedVideos`) to properly pause, detach, and unload all video elements upon disposal/destruction to avoid memory leaks.
+  - Added `entryTrigger` prop support to allow parent components to re-trigger card rise animations dynamically.
+  - Updated default preset background to `#ECECEC` with refined liquid glass lens parameters (`dispersion: 6`, `ringColor: "rgba(0, 0, 0, 0.08)"`).
 
-- **Synchronized Hero-to-Page-2 Curtain Transition (`src/app/components/HeroSection.tsx` & `src/app/page.tsx`):**
-  - Choreographed sequence tied to `#main-scroll-container` with Lenis smooth scrolling.
-  - Phase 1 (0% -> 45% scroll): Dark rectangle overlay scrolls up out of view, center subtitle fades out, 3-line text begins hidden and reveals word-by-word with blur and stagger, bottom "DESIGN — Folio" fades out, initial hero side links fade out.
-  - Phase 1.5 (45% -> 55% scroll): Hold state displaying the revealed Hero (shader active in background, 3-line text crisp).
-  - Phase 2 (55% -> 100% scroll): 3-line text blurs out (`opacity: 0, filter: blur(12px), y: -30`), and the entire Hero section slides up (`yPercent: -100`), acting like a physical curtain pulling back to reveal Page 2 underneath while the navbar transitions in lockstep.
-  - Replaced the duplicate heading in `HeroSection.tsx` with an invisible layout spacer (`opacity-0 pointer-events-none select-none`) to maintain layout spacing and prevent layout shifts.
+- **Page 2 Carousel Integration & Scroll Entrance (`src/app/components/Page2.tsx`):**
+  - Integrated 6 portfolio video clips from `public/videos/`:
+    - `Advance Animations.webm`
+    - `Coffee Cup.webm`
+    - `Human Brain.webm`
+    - `Object Centric Animation - 2.webm`
+    - `Text Centric Animation - 1.webm`
+    - `What You See -.webm`
+  - Integrated GSAP `ScrollTrigger` synced to `#main-scroll-container`:
+    - Carousel container starts hidden below the viewport (`y: 180px`, `opacity: 0`, `pointerEvents: "none"`).
+    - As soon as the Hero section curtain slides up to uncover Page 2 (`progress >= 0.82`), the carousel smoothly glides up to `y: 0`, `opacity: 1` over `0.9s` with `power3.out` easing, enabling pointer interactions and triggering the 3D card rise effect.
+    - When scrolling back up towards the Hero (`progress < 0.60`), the carousel smoothly glides back down (`y: 180px`, `opacity: 0`) and disables pointer events so it will cleanly replay next time Page 2 is reached.
 
-- **Page 2 Clean Canvas (`src/app/components/Page2.tsx`):**
-  - Cleared all temporary content (carousel, watermark, bio) while retaining the clean `#ECECEC` background canvas and responsive layout.
-  - Ready as an empty section for new feature instructions.
-
-- **Smooth Scrolling Integration (`src/components/SmoothScroll.tsx` & `src/app/layout.tsx`):**
-  - Integrated Lenis smooth scroll wrapped in `src/components/SmoothScroll.tsx` and connected to GSAP ticker.
-  - Fixed ticker removal cleanup to pass identical function reference (`updateRaf`), avoiding memory leaks on unmount.
-
-- **Sticky Viewport Page Architecture (`src/app/page.tsx`):**
-  - Stacks `Page2` at `z-10` and `HeroSection` at `z-20` inside a CSS sticky viewport (`sticky top-0 left-0 w-full h-screen overflow-hidden`) with a 220vh scroll track (`h-[220vh]`).
-  - Eliminates DOM pin-spacer jumping and enables deterministic bidirectional scrub.
+- **Page Layer Pointer Events (`src/app/page.tsx`):**
+  - Updated Page 2 wrapper with `pointer-events-auto`, enabling smooth horizontal drag, click-to-focus, and wheel navigation on the carousel once Page 2 is visible.
 
 ## Decisions made
 
-- **Single Master Scroll Container (`#main-scroll-container`)**:
-  - Synced both `GlobalNav` and `HeroSection` to the same scroll trigger and track distance (`start: "top top"`, `end: "+=220%"`), ensuring both timelines scrub in lockstep.
-- **Persistent Header for Main Text**:
-  - Rather than letting the heading scroll away with the hero, moving the heading into `GlobalNav` ensures it smoothly transforms into the permanent navbar brand mark.
-- **Dynamic Centerline Alignment**:
-  - Calculated right nav position dynamically (`rightNavY = titleCenterY - (navHeight / 2)`) rather than using static pixel estimates, ensuring exact inline alignment regardless of font rasterization or responsive scaling.
-- **CSS Sticky Viewport over GSAP DOM Pinning**:
-  - Using `sticky top-0 h-screen` for the viewport container avoids DOM manipulation artifacts from GSAP `.pin-spacer`, providing a smoother experience with Lenis.
+- **Native THREE.VideoTexture over DOM Video Layering**:
+  - Embedding the videos directly as Three.js textures preserves the 3D depth, perspective, card tilting, and the liquid glass lens refraction/distortion shader effects across all cards.
+- **ScrollTrigger Progress Threshold for Entrance**:
+  - Triggering the reveal tween at `progress >= 0.82` ensures the carousel glides up precisely as the physical curtain opens, rather than prematurely animating while covered by the hero.
+- **Bidirectional Smooth Reset**:
+  - Hiding the carousel back down when scrolling back up (`progress < 0.60`) ensures a deterministic experience in both directions.
 
 ## Problems solved
 
-- **Text Overlay on Initial Page Refresh**:
-  - The 3-line text ("DESIGN, BUILD & EXPERIMENT...") was initially displaying on page load overlapping the center subtitle and bottom heading.
-  - Resolved by applying `opacity-0` and inline `style={{ opacity: 0, filter: "blur(12px)" }}` in JSX, calling `gsap.set(words, { opacity: 0 })` on mount, and delaying the reveal tween to start at timeline offset `0.06`.
-- **Top and Left Corner Gap**:
-  - Tightened the target offsets for the scaled logo (`x: 18px` desktop / `10px` mobile, `y: 12px` desktop / `8px` mobile) to match the tight, corner-tucked look in the reference design.
-- **Nav Hover & Font Inconsistency**:
-  - Converted static anchor/span nav tags in `GlobalNav` to `<LetterSwapPingPong>` with `font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer text-[#080808]`, restoring full visual and interactive parity with the hero.
+- **Three.js TextureLoader Video Incompatibility**:
+  - Standard `THREE.TextureLoader.load()` only handles static images, which previously caused video paths to error out and fall back to numbered canvas placeholders. Replaced with `THREE.VideoTexture` and video lifecycle management.
+- **Autoplay Policy Constraints**:
+  - Added both `defaultMuted`, `muted`, `playsinline`, and a one-time window pointerdown listener fallback so video playback starts unconditionally.
 
 ## Current state
 
-- Hero section animations (hidden -> reveal) work cleanly with reflection shader background.
-- Hero-to-Page-2 curtain reveal is buttery smooth in both scroll directions.
-- Scaled `ADARSH'25` logo and right nav items are inline, responsive, and styled.
-- Page 2 is an empty clean canvas ready for next development tasks.
-- App builds cleanly (`npm run build` passes with 0 errors).
+- Hero section and curtain reveal function smoothly.
+- Page 2 displays the Liquid Glass Carousel with all 6 videos autoplaying in 3D.
+- Bottom-to-top reveal animation triggers as Page 2 comes fully into screen.
+- Carousel automatically scrolls on repeat (`speed: 65px/s`, seamlessly wraps modulo `totalWidth`) and resumes after user drags.
+- 3D cylindrical side curvature configured as a concave wrap-around arc: center part curves inward into the screen (negative Z), while the sides curve forward toward the viewer with inward rotation (`rotY = -theta`).
+- Center liquid glass lens effect is temporarily disabled (`lens={{ enabled: false }}`).
+- Integrated `<GradualBlur />` on both left and right edges with refined, subtle parameters (`width="6rem"`, `strength={0.9}`, `curve="ease-in"`, `exponential={false}`) so cards softly dissolve at the screen edges without overwhelming the viewport.
+- Card Edge Curving: Injected a signed-distance-field (SDF) box corner shader (`sdCardBox`) into `MeshBasicMaterial.onBeforeCompile` with `uCornerRadius` (22px) and dynamic `uCardSize` updates, replacing `#include <common>` to preserve `#version 300 es` on line 1, and guarded with `USE_UV` to ensure 100% stable WebGL 2 shader compilation.
+- Jitter Elimination & Restored Signature Incoming Animation:
+  - Restored the full signature 3D incoming card animation: cards fly in from below the screen (`enterFrom: "bottom"`) in an orchestrated wave from center outward, fanning out into the 3D curved space, and expanding from initial height to full size with `EXPO_INOUT` easing.
+  - Eliminated the incoming snap/jitter: paused `autoScroll` while `inEntry` (`entryActive || entrySettled`) is running so `scroll` stays locked to the center card until cards are fully in place. When entry completes, `off` and `centerX` match with 0px difference, transitioning seamlessly into smooth continuous auto-scroll.
+  - Sharp Edges During Reveal: Kept `uCornerRadius = 0` during the entire reveal and fanning out phase, completely eliminating the pill shape distortion. The subtle corner curvature (22px) only blends in once the cards reach their full dimensions.
+  - Immediate Scroll Upon Scaling: Removed the 1.0s idle delay after card scale completion (`lastInput = 0` at `growEnd`), and tightened scale timing so auto-scroll begins immediately as soon as cards reach their full size.
+  - Decoupled Mouse Scroll from Cards: Set `wheel: false` and `touchAction: "pan-y"` so mouse wheel scrolling passes cleanly through to the main webpage, allowing vertical navigation to subsequent pages. Dragging with mouse/touch (`drag: true`) remains fully functional on the cards.
+  - Fixed carousel wrapping math with canonical screen-centered continuous formula (`REPEATS = 5`), ensuring cards never swap mesh instances in the viewport.
+  - Eliminated auto-scroll lag oscillation by advancing `scroll` and `target` in lockstep during steady auto-scroll, with `scrollEnergy` zeroed out so card scale remains rock-solid without vibrating.
+- Scaled Down Cards & Elevated Upward Layout:
+  - Scaled cards down by ~20%: `cardWidth={240}` (down from 300), `cardHeight={390}` (down from 490), `gap={30}` (down from 38), and `cornerRadius={18}` (down from 22).
+  - Shifted carousel upward (`-translate-y-4 sm:-translate-y-6` inside a `flex-1 min-h-0` wrapper) to provide generous visual breathing room in the lower viewport.
+  - Bottom Statement Matching Hero Section:
+    - Text: `A collection of original motion graphics and visual experiments,` / `crafted through design, animation and After Effects.`
+    - Styling: `text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase text-center`.
+    - Positioned at `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto`, guaranteeing 100% visibility on all phone screens without being clipped off by flex overflow.
+- Mobile Touch Scroll & Gesture Disambiguation:
+  - Set WebGL canvas `el.style.touchAction = "pan-y"`, allowing the mobile browser to process native vertical touch scroll events.
+  - Added smart touch gesture disambiguation in `onPointerDown`/`onPointerMove`:
+    - Vertical finger swipes (`dy > dx && dy > 8`) immediately yield control to native browser page scrolling.
+    - Horizontal swipes (`dx >= dy && dx > 8`) lock into carousel card drag with `setPointerCapture`.
+    - Desktop mouse dragging remains immediate and unaffected.
+- Production build passes with zero errors (`npm run build`).
 
 ## Next session starts with
 
-- Implementing the content and interactive components for Page 2 based on developer instructions.
-
-## Open questions
-
-- Specific components, layouts, or portfolio items to feature on Page 2.
+- Building next pages or fine-tuning any specific typography, animations, or video details requested by user.

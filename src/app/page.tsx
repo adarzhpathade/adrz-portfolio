@@ -11,8 +11,8 @@ export default function Home() {
       {/* Sticky viewport pinned smoothly for the duration of the scroll animation */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
         {/* Page 2 is layered underneath at z-10 */}
-        <div className="absolute inset-0 z-10 w-full h-full">
-          <Page2 />
+        <div className="absolute inset-0 z-10 w-full h-full pointer-events-auto">
+          <Page2 scrollTriggerTrigger="#main-scroll-container" />
         </div>
 
         {/* HeroSection is layered on top at z-20 and slides up out of the viewport */}

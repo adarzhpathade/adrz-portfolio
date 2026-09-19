@@ -474,6 +474,7 @@ const offsetOf = (v: ItemValue): number => {
 }
 
 export interface LensSettings {
+    enabled?: boolean
     shape?: "circle" | "square"
     width?: number
     height?: number
@@ -501,6 +502,13 @@ export interface InteractionSettings {
     focusTransition?: FramerTransition
 }
 
+export interface AutoScrollSettings {
+    enabled?: boolean
+    speed?: number
+    pauseOnHover?: boolean
+    resumeDelay?: number
+}
+
 export interface LiquidGlassCarouselProps {
     items?: ItemValue[]
     background?: string
@@ -514,6 +522,11 @@ export interface LiquidGlassCarouselProps {
     motion?: MotionSettings
     entry?: EntrySettings
     interaction?: InteractionSettings
+    entryTrigger?: boolean | number
+    curved?: boolean
+    curveRadius?: number
+    cornerRadius?: number
+    autoScroll?: boolean | AutoScrollSettings
     style?: React.CSSProperties
 }
 
@@ -590,24 +603,24 @@ function makeParams(p: LiquidGlassCarouselProps) {
 
         entry: {
             enabled: e.enabled !== false,
-            delay: et.delay >= 0 ? et.delay : 0.5 * ts,
+            delay: et.delay >= 0 ? et.delay : 0.2 * ts,
             startH: 80,
             riseDuration: et.duration,
             ease: et.ease,
-            stagger: 0.07 * ts,
+            stagger: 0.06 * ts,
             travel: 0.9,
 
             pattern:
                 ENTRY_PATTERNS[e.enterFrom ?? "bottom"] ?? ENTRY_PATTERNS.bottom,
-            growDelay: 0.25 * ts,
-            growDuration: 2.15 * ts,
-            growStagger: 0.085 * ts,
+            growDelay: 0.1 * ts,
+            growDuration: 1.35 * ts,
+            growStagger: 0.07 * ts,
             outward: false,
-            lensBloom: 1.4 * ts,
+            lensBloom: 1.2 * ts,
         },
 
         lens: {
-            enabled: true,
+            enabled: l.enabled !== false,
             square: l.shape === "square",
             round: 0,
             sizeX: clamp(l.width ?? 0.565, 0.05, 3),
@@ -643,6 +656,15 @@ function makeParams(p: LiquidGlassCarouselProps) {
             samples: 16,
         },
 
+        curved: p.curved !== false,
+        curveRadius: typeof p.curveRadius === "number" ? p.curveRadius : 0,
+        cornerRadius: clamp(p.cornerRadius ?? 22, 0, 100),
+        autoScroll: {
+            enabled: p.autoScroll === true || (typeof p.autoScroll === "object" && p.autoScroll.enabled !== false) || p.autoScroll === undefined,
+            speed: typeof p.autoScroll === "object" && typeof p.autoScroll.speed === "number" ? p.autoScroll.speed : 65,
+            pauseOnHover: typeof p.autoScroll === "object" && p.autoScroll.pauseOnHover === true,
+            resumeDelay: typeof p.autoScroll === "object" && typeof p.autoScroll.resumeDelay === "number" ? p.autoScroll.resumeDelay : 1000,
+        },
         background: p.background ?? "#000000",
         cardColor: "#262626",
     }
@@ -682,7 +704,7 @@ function placeholderTexture(index: number, aspect: number, color: string) {
     return tex
 }
 
-const REPEATS = 4
+const REPEATS = 5
 
 interface EngineItem {
     src: string
@@ -731,12 +753,16 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     function applyClear() {
         if (pp.background === clearKey) return
         clearKey = pp.background
-        try {
-            clearColor.set(pp.background)
-        } catch {
-            clearColor.set("#ffffff")
+        if (pp.background === "transparent") {
+            renderer.setClearColor(0x000000, 0)
+        } else {
+            try {
+                clearColor.set(pp.background)
+            } catch {
+                clearColor.set("#ffffff")
+            }
+            renderer.setClearColor(clearColor, 1)
         }
-        renderer.setClearColor(clearColor, 1)
     }
     applyClear()
 
@@ -746,7 +772,7 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     el.style.top = "0"
     el.style.display = "block"
 
-    el.style.touchAction = "none"
+    el.style.touchAction = "pan-y"
     el.style.userSelect = "none"
     el.style.setProperty("-webkit-user-select", "none")
     el.style.setProperty("-webkit-touch-callout", "none")
@@ -754,15 +780,12 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     mount.appendChild(el)
 
     const scene = new THREE.Scene()
-    const camera = new THREE.OrthographicCamera(
-        -W / 2,
-        W / 2,
-        H / 2,
-        -H / 2,
-        -100,
-        100
-    )
-    camera.position.z = 10
+    const fov = 40
+    const fovRad = (fov * Math.PI) / 180
+    let camZ = (H / 2) / Math.tan(fovRad / 2)
+    const camera = new THREE.PerspectiveCamera(fov, W / H, 10, 10000)
+    camera.position.set(0, 0, camZ)
+    camera.lookAt(0, 0, 0)
 
     const loader = new THREE.TextureLoader()
     loader.setCrossOrigin("anonymous")
@@ -770,6 +793,7 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     let sources: Source[] = []
     let pool: Panel[] = []
     let owned: THREE.Texture[] = []
+    let ownedVideos: HTMLVideoElement[] = []
     let offsets: number[] = []
     let totalWidth = 0
 
@@ -999,6 +1023,14 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         pool = []
         owned.forEach((t) => t.dispose())
         owned = []
+        ownedVideos.forEach((v) => {
+            try {
+                v.pause()
+                v.removeAttribute("src")
+                v.load()
+            } catch {}
+        })
+        ownedVideos = []
         sources = []
     }
 
@@ -1053,6 +1085,73 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
                 owned.push(s.tex)
                 return s
             }
+
+            const isVideo = /\.(webm|mp4|mov|ogg)($|\?)/i.test(item.src)
+            if (isVideo) {
+                const video = document.createElement("video")
+                video.src = item.src
+                video.crossOrigin = "anonymous"
+                video.loop = true
+                video.muted = true
+                video.defaultMuted = true
+                video.playsInline = true
+                video.autoplay = true
+                video.setAttribute("playsinline", "")
+                video.setAttribute("webkit-playsinline", "")
+                video.setAttribute("muted", "")
+                ownedVideos.push(video)
+
+                const tex = new THREE.VideoTexture(video)
+                tex.minFilter = THREE.LinearFilter
+                tex.magFilter = THREE.LinearFilter
+                tex.generateMipmaps = false
+                tex.colorSpace = THREE.SRGBColorSpace
+                s.tex = tex
+                owned.push(tex)
+
+                let resolved = false
+                const onReady = () => {
+                    if (resolved) return
+                    resolved = true
+                    if (disposed || gen !== generation) return
+                    if (!s.locked && video.videoWidth && video.videoHeight) {
+                        s.aspect = video.videoWidth / video.videoHeight
+                    }
+                    recomputeTotal()
+                    if (--awaiting <= 0) boot()
+                    else if (still) frame()
+                }
+
+                video.addEventListener("loadedmetadata", onReady)
+                video.addEventListener("canplay", onReady)
+                video.addEventListener("error", () => {
+                    if (resolved) return
+                    resolved = true
+                    if (disposed || gen !== generation) return
+                    s.ph = true
+                    s.tex = placeholderTexture(i, s.aspect, pp.cardColor)
+                    owned.push(s.tex)
+                    if (--awaiting <= 0) boot()
+                    else if (still) frame()
+                })
+
+                video.play().catch(() => {
+                    const resume = () => {
+                        video.play().catch(() => {})
+                        window.removeEventListener("pointerdown", resume)
+                        window.removeEventListener("touchstart", resume)
+                    }
+                    window.addEventListener("pointerdown", resume, { once: true })
+                    window.addEventListener("touchstart", resume, { once: true })
+                })
+
+                if (video.readyState >= 1) {
+                    onReady()
+                }
+
+                return s
+            }
+
             loader.load(
                 item.src,
                 (tex) => {
@@ -1093,10 +1192,47 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
 
         for (let r = 0; r < REPEATS; r++) {
             for (let i = 0; i < sources.length; i++) {
+                const cardUniforms = {
+                    uCornerRadius: { value: 18 },
+                    uCardSize: { value: new THREE.Vector2(240, 390) },
+                }
                 const mat = new THREE.MeshBasicMaterial({
                     color: 0xdddddd,
                     transparent: true,
+                    side: THREE.DoubleSide,
                 })
+                mat.defines = { USE_UV: "" }
+                mat.customProgramCacheKey = () => "card_rounded_material"
+                mat.onBeforeCompile = (shader) => {
+                    shader.uniforms.uCornerRadius = cardUniforms.uCornerRadius
+                    shader.uniforms.uCardSize = cardUniforms.uCardSize
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                        '#include <common>',
+                        `#include <common>
+                        uniform float uCornerRadius;
+                        uniform vec2 uCardSize;
+                        float sdCardBox(vec2 p, vec2 b, float r){
+                            vec2 q = abs(p) - b + r;
+                            return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
+                        }
+                        `
+                    )
+
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                        '#include <dithering_fragment>',
+                        `#include <dithering_fragment>
+                        #if defined(USE_UV)
+                        vec2 p = (vUv - 0.5) * uCardSize;
+                        vec2 b = uCardSize * 0.5;
+                        float d = sdCardBox(p, b, uCornerRadius);
+                        if (d > 0.0) discard;
+                        float edgeAlpha = smoothstep(0.5, -0.5, d);
+                        gl_FragColor.a *= edgeAlpha;
+                        #endif
+                        `
+                    )
+                }
+                mat.userData.uniforms = cardUniforms
                 const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 1, 1), mat)
                 mesh.visible = false
                 scene.add(mesh)
@@ -1193,10 +1329,15 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
             const src = sources[i]
 
             const slotCenterInLoop = offsets[i] + slotWidth(i) / 2 - pp.gap / 2
-            let x = slotCenterInLoop - scroll
-            x = ((x % totalWidth) + totalWidth) % totalWidth
-            x += (rep - Math.floor(REPEATS / 2)) * totalWidth
-            if (x > half + totalWidth) x -= totalWidth * REPEATS
+            const rawX = slotCenterInLoop - scroll
+            // Canonical center copy closest to screen center (0)
+            let centerCopy = ((rawX % totalWidth) + totalWidth) % totalWidth
+            if (centerCopy > totalWidth / 2) {
+                centerCopy -= totalWidth
+            }
+            const midRep = Math.floor(REPEATS / 2)
+            const k = rep - midRep
+            const x = centerCopy + k * totalWidth
 
             const centerX = x
             const inEntry = entryActive || entrySettled
@@ -1295,10 +1436,37 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
                 finalY = fromY + (y - fromY) * pe
             }
 
-            p.mesh.position.set(finalX, finalY, 0)
+            let finalZ = 0
+            let rotY = 0
+
+            if (pp.curved) {
+                const radius = pp.curveRadius > 0 ? pp.curveRadius : Math.max(W * 1.15, 1200)
+                const theta = finalX / radius
+                const clampedTheta = clamp(theta, -Math.PI * 0.42, Math.PI * 0.42)
+                finalX = radius * Math.sin(clampedTheta)
+                const midAngle = clamp((W * 0.35) / radius, 0.15, 0.6)
+                const midSag = radius * (1 - Math.cos(midAngle))
+                finalZ = radius * (1 - Math.cos(clampedTheta)) - midSag
+                rotY = -clampedTheta
+            }
+
+            p.mesh.position.set(finalX, finalY, finalZ)
+            p.mesh.rotation.y = rotY
             p.mesh.scale.set(Math.max(1, finalW), Math.max(1, finalH), 1)
 
-            const sx = centerX + W / 2
+            let cardRadius = pp.cornerRadius
+            if (inEntry) {
+                // Keep edges sharp as they were during the incoming animation (no pill shape)
+                const g = growArr[poolIdx] || 0
+                cardRadius = g >= 0.95 ? pp.cornerRadius * ((g - 0.95) / 0.05) : 0
+            }
+
+            if (p.mat.userData?.uniforms) {
+                p.mat.userData.uniforms.uCardSize.value.set(Math.max(1, finalW), Math.max(1, finalH))
+                p.mat.userData.uniforms.uCornerRadius.value = cardRadius
+            }
+
+            const sx = finalX + W / 2
             const sy = H / 2 - y
             panelRects.push({
                 left: sx - drawW / 2,
@@ -1307,7 +1475,7 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
                 bottom: sy + drawH / 2,
                 poolIdx,
                 srcIndex: i,
-                centerX,
+                centerX: finalX,
             })
 
             if (Math.abs(centerX) < centeredDist) {
@@ -1339,6 +1507,9 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     let dragMoveT = 0
     let suppressClick = false
     let dragPointerType = "mouse"
+    let touchStartX = 0
+    let touchStartY = 0
+    let touchIntent: "unknown" | "horizontal" | "vertical" = "unknown"
     let lastPointerX = NaN
     let lastPointerY = NaN
     let pointerInside = false
@@ -1405,27 +1576,66 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         if (!pp.drag || inputLocked()) return
         if (dragging) return
         if (e.button !== 0 && e.pointerType === "mouse") return
-        dragging = true
+
         dragPointerId = e.pointerId
         dragPointerType = e.pointerType || "mouse"
-        try {
-            el.setPointerCapture(e.pointerId)
-        } catch {}
         dragLastX = e.clientX
         lastPointerX = e.clientX - bounds.left
         lastPointerY = e.clientY - bounds.top
         dragDist = 0
         dragVel = 0
         dragMoveT = performance.now()
-        updateCursor()
-        velocity = 0
-        pendingFocus = null
-        userInteracted = true
-        snapped = false
-        lastInput = dragMoveT
+
+        if (dragPointerType === "mouse") {
+            dragging = true
+            try {
+                el.setPointerCapture(e.pointerId)
+            } catch {}
+            updateCursor()
+            velocity = 0
+            pendingFocus = null
+            userInteracted = true
+            snapped = false
+            lastInput = dragMoveT
+        } else {
+            // On mobile touch: do NOT capture pointer immediately.
+            // Distinguish vertical page swipe (scrolling) from horizontal swipe (carousel).
+            touchStartX = e.clientX
+            touchStartY = e.clientY
+            touchIntent = "unknown"
+            dragging = false
+        }
     }
 
     function onPointerMove(e: PointerEvent) {
+        if (dragPointerType !== "mouse" && touchIntent === "unknown" && dragPointerId === e.pointerId) {
+            const dx = Math.abs(e.clientX - touchStartX)
+            const dy = Math.abs(e.clientY - touchStartY)
+
+            if (dy > dx && dy > 8) {
+                // User is scrolling the page vertically! Release carousel dragging.
+                touchIntent = "vertical"
+                dragging = false
+                dragPointerId = null
+                return
+            } else if (dx >= dy && dx > 8) {
+                // User is dragging carousel horizontally! Lock into horizontal drag.
+                touchIntent = "horizontal"
+                dragging = true
+                try {
+                    el.setPointerCapture(e.pointerId)
+                } catch {}
+                updateCursor()
+                velocity = 0
+                pendingFocus = null
+                userInteracted = true
+                snapped = false
+                lastInput = performance.now()
+            } else {
+                return
+            }
+        }
+
         if (dragging && e.pointerId === dragPointerId) {
             const sens =
                 dragPointerType === "mouse" ? pp.dragSpeed : pp.touchDrag
@@ -1453,6 +1663,11 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     }
 
     function onPointerUp(e?: PointerEvent) {
+        touchIntent = "unknown"
+        if (!dragging && dragPointerType !== "mouse") {
+            dragPointerId = null
+            return
+        }
         if (!dragging) return
 
         if (e && dragPointerId !== null && e.pointerId !== dragPointerId) return
@@ -1638,19 +1853,6 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
 
         const tl = new Timeline(E.delay)
 
-        const spread = E.stagger * Math.max(visible.length - 1, 1)
-        let lastRiseEnd = 0
-        visible.forEach((idx) => {
-            const at = Math.random() * spread
-            lastRiseEnd = Math.max(lastRiseEnd, at + E.riseDuration)
-            tl.to(bag(pEntry), idx, 1, E.riseDuration, E.ease, at)
-        })
-
-        tl.call(() => {
-            entryActive = false
-            entrySettled = true
-        }, lastRiseEnd)
-
         const cSrcG = centerIndex(scroll)
         const midRepG = Math.floor(REPEATS / 2)
         const growList: { idx: number; rank: number }[] = []
@@ -1665,6 +1867,18 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
             maxRank = Math.max(maxRank, r)
             growList.push({ idx: k, rank: r })
         }
+
+        let lastRiseEnd = 0
+        growList.forEach((o) => {
+            const at = o.rank * E.stagger
+            lastRiseEnd = Math.max(lastRiseEnd, at + E.riseDuration)
+            tl.to(bag(pEntry), o.idx, 1, E.riseDuration, E.ease, at)
+        })
+
+        tl.call(() => {
+            entryActive = false
+            entrySettled = true
+        }, lastRiseEnd)
 
         const growStart = lastRiseEnd + E.growDelay
         let growEnd = growStart
@@ -1688,8 +1902,11 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         tl.call(() => {
             entrySettled = false
             for (let k = 0; k < growArr.length; k++) growArr[k] = 1
+            // Immediately set lastInput to 0 so isIdle is instantly true and scroll begins without delay
+            lastInput = 0
             updateCursor()
         }, growEnd)
+
         entryTl = tl
     }
 
@@ -1712,26 +1929,46 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
             velocity *= Math.pow(pp.friction, f)
             if (Math.abs(velocity) < 0.05) velocity = 0
 
-            if (
+            const inEntry = entryActive || entrySettled
+            const isIdle = now - lastInput > pp.autoScroll.resumeDelay
+            const isFlicking = Math.abs(velocity) > 0.5
+            const hoverPause = pp.autoScroll.pauseOnHover && pointerInside && hoverPanel
+
+            if (!inEntry && pp.autoScroll.enabled && !focusState.active && isIdle && !isFlicking && !hoverPause) {
+                const autoMove = pp.autoScroll.speed * dt
+                if (Math.abs(target - scroll) < 2.0) {
+                    target = scroll + autoMove
+                    scroll = target
+                } else {
+                    target += autoMove
+                    scroll += (target - scroll) * lerp(pp.ease)
+                }
+                snapped = false
+            } else if (
+                !inEntry &&
                 pp.snap &&
                 !snapped &&
                 !focusState.active &&
+                !pp.autoScroll.enabled &&
                 now - lastInput > pp.snapIdleMs
             ) {
                 target = centerForIndex(nearestIndex(scroll))
                 snapped = true
+                scroll += (target - scroll) * lerp(pp.snapEase)
+            } else {
+                const base =
+                    snapped && !pendingFocus
+                        ? pp.snapEase
+                        : pp.ease
+                scroll += (target - scroll) * lerp(base)
             }
+        } else {
+            const base = dragPointerType !== "mouse" ? pp.touchEase : pp.ease
+            scroll += (target - scroll) * lerp(base)
         }
 
-        const base =
-            dragging && dragPointerType !== "mouse"
-                ? pp.touchEase
-                : snapped && !pendingFocus
-                  ? pp.snapEase
-                  : pp.ease
-        scroll += (target - scroll) * lerp(base)
-
-        const rawSpeed = (scroll - prevScroll) / f
+        const isUserMoving = dragging || Math.abs(velocity) > 0.5
+        const rawSpeed = isUserMoving ? (scroll - prevScroll) / f : 0
         prevScroll = scroll
         const norm = Math.min(1, Math.abs(rawSpeed) / Math.max(1, pp.shrinkSpeed))
         const k = norm > scrollEnergy ? pp.shrinkAttack : pp.shrinkDecay
@@ -1801,10 +2038,9 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         W = nw
         H = nh
         renderer.setSize(W, H)
-        camera.left = -W / 2
-        camera.right = W / 2
-        camera.top = H / 2
-        camera.bottom = -H / 2
+        camera.aspect = W / H
+        camZ = (H / 2) / Math.tan(fovRad / 2)
+        camera.position.set(0, 0, camZ)
         camera.updateProjectionMatrix()
         rt.setSize(Math.max(1, Math.round(W * dpr)), Math.max(1, Math.round(H * dpr)))
         lensU.uRes.value.set(W * dpr, H * dpr)
@@ -1931,6 +2167,12 @@ function __OriginkitBase_LiquidGlassCarousel(props: LiquidGlassCarouselProps) {
     }, [props.entry?.enabled])
 
     useEffect(() => {
+        if (props.entryTrigger) {
+            engineRef.current?.replayEntry()
+        }
+    }, [props.entryTrigger])
+
+    useEffect(() => {
         engineRef.current?.frame()
     })
 
@@ -1943,7 +2185,7 @@ function __OriginkitBase_LiquidGlassCarousel(props: LiquidGlassCarouselProps) {
                 height: "100%",
                 overflow: "hidden",
 
-                touchAction: "none",
+                touchAction: "pan-y",
                 background: paramsRef.current.background,
                 ...props.style,
             }}
@@ -1997,18 +2239,18 @@ const __originkitPresetProps = {
       "offsetY": 0
     }
   ],
-  "background": "#000000",
+  "background": "#ECECEC",
   "sizeMode": "same",
   "gap": 45,
-  "cardWidth": 270,
-  "cardHeight": 490,
+  "cardWidth": 280,
+  "cardHeight": 480,
   "lens": {
     "shape": "square",
-    "width": 0.05,
-    "height": 0.05,
-    "rotation": -180,
-    "dispersion": 0,
-    "ringColor": "#000000"
+    "width": 0.55,
+    "height": 0.75,
+    "rotation": 15,
+    "dispersion": 6,
+    "ringColor": "rgba(0, 0, 0, 0.08)"
   },
   "motion": {
     "snap": true,
@@ -2034,7 +2276,7 @@ const __originkitPresetProps = {
   },
   "interaction": {
     "drag": true,
-    "wheel": true,
+    "wheel": false,
     "clickToFocus": true,
     "focusTransition": {
       "ease": [
