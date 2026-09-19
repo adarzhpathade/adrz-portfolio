@@ -40,36 +40,36 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
 
     if (!section || !rectangle || !about || !contact || !centerText || !revealText || !bottomHeading) return;
 
-    // Master scroll timeline synchronized with GlobalNav and Page2
+    // Master scroll timeline synchronized with GlobalNav, Page2, and Page3
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=220%", 
+        end: "+=360%", 
         scrub: 1,
         invalidateOnRefresh: true,
       },
     });
 
-    // --- PHASE 1: Hero Reveal (0.0 -> 0.45) ---
+    // --- PHASE 1: Hero Reveal (0.00 -> 0.28) ---
     // 1. Dark rectangle scrolls up and out (revealing the shader background)
     tl.to(rectangle, {
       yPercent: -100,
       ease: "none",
-      duration: 0.45,
+      duration: 0.28,
     }, 0);
 
     // 2. Center subtitle fades out
     tl.to(centerText, {
       opacity: 0,
       ease: "power2.in",
-      duration: 0.25,
+      duration: 0.15,
     }, 0);
 
     // 3. Initial hero side links fade out quickly on scroll
     tl.to([about, contact], {
       opacity: 0,
-      duration: 0.08,
+      duration: 0.05,
       ease: "power2.in",
     }, 0);
 
@@ -83,10 +83,10 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
         opacity: 1,
         filter: "blur(0px)",
         y: 0,
-        stagger: 0.015,
+        stagger: 0.01,
         ease: "none",
-        duration: 0.38,
-      }, 0.06
+        duration: 0.24,
+      }, 0.04
     );
 
     // 6. Bottom "DESIGN — Folio" fades out with blur
@@ -94,29 +94,31 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
       opacity: 0,
       filter: "blur(12px)",
       ease: "power2.in",
-      duration: 0.25,
+      duration: 0.15,
     }, 0);
 
-    // --- PHASE 1.5: Hold Hero Revealed State (0.45 -> 0.55) ---
-    // (Timeline naturally holds between 0.45 and 0.55)
+    // --- PHASE 1.5: Hold Hero Revealed State (0.28 -> 0.33) ---
 
-    // --- PHASE 2: Transition to Page 2 (0.55 -> 1.0) ---
-    // 6. 3-line text fades out and blurs upwards
+    // --- PHASE 2: Transition to Page 2 (0.33 -> 0.56) ---
+    // 7. 3-line text fades out and blurs upwards
     tl.to(revealText, {
       opacity: 0,
       filter: "blur(12px)",
       y: -30,
       ease: "power2.in",
-      duration: 0.15,
-    }, 0.55);
+      duration: 0.09,
+    }, 0.33);
 
-    // 7. Hero section physically slides up and out of the viewport,
+    // 8. Hero section physically slides up and out of the viewport,
     // revealing the light-colored Page 2 sitting underneath
     tl.to(section, {
       yPercent: -100,
       ease: "power1.inOut",
-      duration: 0.45,
-    }, 0.55);
+      duration: 0.23,
+    }, 0.33);
+
+    // Explicitly anchor timeline total duration to 1.0
+    tl.set({}, {}, 1.0);
 
   }, { scope: sectionRef, dependencies: [scrollTriggerTrigger] });
 
@@ -140,7 +142,7 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
           {/* Layout spacer for main heading (the visible heading is animated in GlobalNav) */}
           <div className="z-10 text-center flex items-center justify-center opacity-0 pointer-events-none select-none" aria-hidden="true">
             <h2 className="text-6xl sm:text-8xl lg:text-[10rem] xl:text-[12rem] font-[380] tracking-normal uppercase leading-none flex items-center justify-center">
-              ADARSH<span className="font-display italic font-normal normal-case">'25</span>
+              ADARSH<span className="font-display italic font-normal normal-case">'26</span>
             </h2>
           </div>
           

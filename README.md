@@ -1,4 +1,4 @@
-# ADARSH'25 — Creative Technologist & Motion Portfolio
+# ADARSH'26 — Creative Technologist & Motion Portfolio
 
 > Designing, building & experimenting with code, AI & motion. Turning ideas into immersive digital experiences & visual stories.
 
@@ -6,16 +6,11 @@ A high-performance creative development portfolio engineered with **Next.js 16**
 
 ---
 
-## ✨ Features & Highlights
+## 🌟 Key Architectural Highlights
 
-### 1. Hero Section & Curtain Reveal
-- **WebGL Reflect Shader**: Hardware-accelerated dynamic chromatic reflection background that reacts dynamically to scroll progress.
-- **Micro-Interactive Typography**: Custom letter-swapping hover animations (`LetterSwapPingPong`) and blurred scroll-driven text reveals (`BlurText`).
-- **Synchronized Scroll Choreography**: Pinned master viewport driven by **GSAP ScrollTrigger** and **Lenis** smooth scrolling.
-- **Physical Curtain Transition**: Hero section slides up cleanly to reveal Page 2 beneath it once scroll progress passes the threshold.
-
-### 2. Persistent Global Navigation
-- **Dynamic Scale & Translate**: The `ADARSH'25` title begins prominently centered in the Hero section and smoothly scales and tracks to its persistent top-left header position on Page 2.
+### 1. Continuous Pinned Viewport Architecture
+- **Master Sticky Scroll Track**: The entire page lives within a pinned `h-[360vh]` scroll track inside `src/app/page.tsx`.
+- **Dynamic Scale & Translate**: The `ADARSH'26` title begins prominently centered in the Hero section and smoothly scales and tracks to its persistent top-left header position on Page 2.
 - **Responsive Navigation Actions**: Centerline-aligned interactive navigation links (`(Contact)`) with smooth page-scroll triggers.
 
 ### 3. Page 2 — 3D Liquid Glass Carousel & Motion Reel

@@ -29,13 +29,13 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
 
     const getMetrics = () => {
       const isDesktop = window.innerWidth >= 768;
-      const targetScale = isDesktop ? 0.22 : 0.36;
-      const targetX = isDesktop ? 18 : 10;
-      const targetY = isDesktop ? 12 : 8;
+      const targetScale = isDesktop ? 0.22 : 0.40;
+      const targetX = isDesktop ? 18 : 12;
+      const targetY = isDesktop ? 12 : 12;
       const heroY = isDesktop ? 10 : 4;
       const heroX = (window.innerWidth - titleWrapper.offsetWidth) / 2;
 
-      // Exact vertical centerline of the scaled "ADARSH'25" title on Page 2
+      // Exact vertical centerline of the scaled "ADARSH'26" title on Page 2
       const scaledTitleHeight = titleWrapper.offsetHeight * targetScale;
       const titleCenterY = targetY + (scaledTitleHeight / 2);
 
@@ -58,14 +58,14 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=220%",
+        end: "+=360%",
         scrub: 1,
         invalidateOnRefresh: true,
       },
     });
 
-    // 0.0 -> 0.50: Hero reveal is playing; title stays centered & large in hero state
-    // 0.50 -> 1.00: Transition to Page 2
+    // 0.00 -> 0.33: Hero reveal is playing; title stays centered & large in hero state
+    // 0.33 -> 0.56: Transition to Page 2
     // Title scales down and slides to top-left corner
     tl.fromTo(
       titleWrapper,
@@ -80,20 +80,20 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
         y: () => getMetrics().targetY,
         scale: () => getMetrics().targetScale,
         ease: "power1.inOut",
-        duration: 0.5,
+        duration: 0.23,
       },
-      0.5
+      0.33
     );
 
-    // Title color transitions smoothly to deep black (#080808) for Page 2
+    // Title color transitions smoothly to deep black (#080808) for Page 2 & Page 3
     tl.to(
       titleText,
       {
         color: "#080808",
         ease: "power1.inOut",
-        duration: 0.5,
+        duration: 0.23,
       },
-      0.5
+      0.33
     );
 
     // Right nav links fade and slide in to the exact inline centerline of the title
@@ -107,10 +107,14 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
         opacity: 1,
         y: () => getMetrics().rightNavY,
         ease: "power2.out",
-        duration: 0.35,
+        duration: 0.16,
       },
-      0.65
+      0.40
     );
+
+    // Explicitly anchor timeline total duration to 1.0 so nav remains pinned in position
+    // across both Page 2 and Page 3 with zero movement
+    tl.set({}, {}, 1.0);
 
   }, { scope: navContainerRef, dependencies: [scrollTriggerTrigger] });
 
@@ -138,7 +142,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
             <BlurText 
               text={[
                 { text: "ADARSH" },
-                { text: "'25", className: "font-display italic font-normal normal-case" }
+                { text: "'26", className: "font-display italic font-normal normal-case" }
               ]} 
               delay={30}
               stepDuration={0.25}
@@ -161,7 +165,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="DESIGN — FOLIO"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
+              className="font-mono text-[13px] sm:text-xs md:text-sm tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
             />
           </div>
           <div className="inline-block">
@@ -169,7 +173,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="(Contact)"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
+              className="font-mono text-[13px] sm:text-xs md:text-sm tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
               onClick={() => {
                 const contactEl = document.getElementById("contact");
                 if (contactEl) contactEl.scrollIntoView({ behavior: "smooth" });
@@ -181,7 +185,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="(About)"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
+              className="font-mono text-[13px] sm:text-xs md:text-sm tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
               onClick={() => {
                 const aboutEl = document.getElementById("about");
                 if (aboutEl) aboutEl.scrollIntoView({ behavior: "smooth" });

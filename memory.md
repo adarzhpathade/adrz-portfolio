@@ -1,134 +1,101 @@
-# Memory — ADARSH'25 Portfolio Architecture & State
+# Memory — ADARSH'26 Portfolio Architecture, Page 3 3D Box Carousel & Responsive Calibrations
 
-Last updated: 2026-09-19 (Session complete, pushed to `origin/main`)
-
----
-
-## 1. Project Overview & Repository State
-
-- **Repository**: `https://github.com/adarzhpathade/adrz-portfolio.git`
-- **Branch**: `main` (Latest commit `50ede16`, working tree clean).
-- **Core Tech Stack**:
-  - **Framework**: Next.js 16.3.5 (App Router, Turbopack)
-  - **Runtime & UI**: React 19.2.8, TypeScript 5, Tailwind CSS v4
-  - **3D Graphics & Shaders**: Three.js 0.186.0, WebGL 2, Custom GLSL shaders
-  - **Animation**: GSAP 3.15.0 (`ScrollTrigger`, `@gsap/react`), Framer Motion 13.4.0
-  - **Smooth Scrolling**: Lenis 1.3.26 synchronized with GSAP ticker
-  - **Typography**: PP Neue Montreal (Sans), PP Eiko (Display Italic), Fragment Mono (Monospace)
-- **Production Build Status**: `npm run build` and `npx tsc --noEmit` pass with **0 errors**.
+Last updated: 2026-09-19 (Session complete, verified with 0 TypeScript/build errors)
 
 ---
 
-## 2. Page Architecture & Master Scroll System
+## What was built
 
-The entire application runs on a pinned sticky scroll container in `src/app/page.tsx`:
-- **Scroll Track**: `h-[220vh]` invisible div providing the scroll distance for GSAP ScrollTrigger.
-- **Sticky Viewport**: `sticky top-0 left-0 w-full h-screen overflow-hidden`.
-- **Layer Stacking Order**:
-  - `z-30`: **Global Navigation Header (`GlobalNav.tsx`)** — Persistent across pages.
-  - `z-20`: **Hero Section (`HeroSection.tsx`)** — Slides up and out of the viewport on scroll (`yPercent: -100` between scroll progress 0.55 and 1.00).
-  - `z-10`: **Page 2 (`Page2.tsx`)** — Sits directly beneath Hero; fades in and triggers the 3D card carousel entrance when scroll progress reaches `>= 0.80`.
+1. **Page 3 Selected Work with Interactive 3D Cube Carousel** ([src/app/components/Page3.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/Page3.tsx)):
+   - Engineered the complete Page 3 canvas attached seamlessly below Page 2 on the unified `#ECECEC` light background.
+   - Built an interactive rotating 3D box cube showcasing featured projects (`Sentinel Terminal` and `Adarsh'26`).
+   - Integrated project info panels with animated text reveals, animated underline hover states ([src/components/fancy/text/underline-center.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/components/fancy/text/underline-center.tsx)), and active project metadata.
+   - Designed the massive bottom brand typography headline (`PROJECTS`) matching the dual-font signature (`PR` and `JECTS` in `PP Neue Montreal`, `O` in `PP Eiko Italic`).
+   - Built entrance choreography via GSAP ScrollTrigger (`y: 140 -> 0`, `rotateX: 22 -> 0`, `rotateY: -32 -> 0`, `rotateZ: -5 -> 0`, `scale: 0.82 -> 1`, `opacity: 0 -> 1`).
 
----
+2. **3D Box Carousel Engine** ([src/components/fancy/carousel/box-carousel.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/components/fancy/carousel/box-carousel.tsx)):
+   - 4-face 3D cube utilizing CSS `transform-style: preserve-3d` with exact `translateZ(depth / 2)` calculations based on container dimensions.
+   - Supports touch/pointer drag, spring physics (`stiffness: 200, damping: 30`), auto-play, keyboard navigation, and imperative `next()` / `prev()` controls.
+   - Fixed Framer Motion v13 animation typing by importing `ValueAnimationTransition` from `motion-dom` for typed `animate(motionValue, number, options)`.
 
-## 3. Component Deep Dive
+3. **Responsive Dimension Calibration Engine**:
+   - Page 3 3D Box Cube:
+     - **Large Desktop (`≥ 1440px`)**: `470px × 275px` (scaled down for optimal breathing room around `PROJECTS` and the top statement).
+     - **Desktop / Laptops (`1024px – 1440px`)**: `430px × 250px`.
+     - **Small Laptops / Tablets (`768px – 1024px`)**: `380px × 220px`.
+     - **Tablets (`640px – 768px`)**: `310px × 180px`.
+     - **Standard Mobile (`< 640px`)**: `280px × 165px` (maintains ~55px to 80px side margins, never touches screen edges).
+     - **Compact Mobile (`< 380px`)**: `250px × 148px`.
+   - Dimensions are evaluated synchronously with window resize listeners and passed to `<BoxCarousel key={`${width}-${height}`} />` to guarantee clean remounts without 3D depth glitches when switching breakpoints.
 
-### A. Global Navigation (`src/app/components/GlobalNav.tsx`)
-- **Title Tracking Animation**:
-  - Starts as the main hero headline (`ADARSH'25`, large display font).
-  - On scroll (progress 0.55 -> 0.92), scales down (`0.22` desktop, `0.36` mobile) and translates to the top-left header position (`x: 18px / 10px`, `y: 12px / 8px`).
-  - Color transitions smoothly from white (Hero) to dark `#080808` (Page 2).
-- **Responsive Nav Links**: Right-aligned navigation links (`(Contact)`) stay inline with the title's vertical centerline on Page 2.
+4. **Page 2 Mobile Typography & Layout Refinement** ([src/app/components/Page2.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/Page2.tsx)):
+   - Solved empty vertical space on mobile by adjusting the carousel container offset to `translate-y-0 sm:-translate-y-6 pt-14 pb-14`.
+   - Formatted the mobile bottom statement into 3 balanced lines (`39 / 39 / 36` characters) with `bottom-8` clearance:
+     ```text
+     A COLLECTION OF ORIGINAL MOTION GRAPHICS
+     AND VISUAL EXPERIMENTS, CRAFTED THROUGH
+     DESIGN, ANIMATION AND AFTER EFFECTS.
+     ```
+   - Desktop view preserved with the clean 2-line layout (`hidden sm:block`).
 
-### B. Hero Section (`src/app/components/HeroSection.tsx`)
-- **WebGL ReflectShader**: Chromatic reflection background responding to scroll progression.
-- **Micro-Interactions**:
-  - `LetterSwapPingPong`: Interactive letter swap on hover.
-  - `BlurText`: Smooth word-by-word blur reveals on scroll.
-- **Bottom Bio**:
-  - Anchored at `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center`.
-  - Typography: `text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase`.
-
-### C. Page 2 — 3D Liquid Glass Carousel (`src/app/components/Page2.tsx`)
-- **6 Portfolio WebM Clips** (`public/videos/`):
-  1. `Advance Animations.webm`
-  2. `Coffee Cup.webm`
-  3. `Human Brain.webm`
-  4. `Object Centric Animation - 2.webm`
-  5. `Text Centric Animation - 1.webm`
-  6. `What You See -.webm`
-- **Proportions**:
-  - `cardWidth: 240px` (scaled down ~20% from original 300px for refined hierarchy)
-  - `cardHeight: 390px` (scaled down ~20% from 490px)
-  - `gap: 30px`
-  - `cornerRadius: 18px`
-- **Curvature & Layout**:
-  - Shifted upward via `-translate-y-4 sm:-translate-y-6` with top padding `pt-10 sm:pt-14` and bottom padding `pb-8 sm:pb-12`.
-  - Concave 3D arc: center cards curve inward into the screen (negative Z), outer cards curve forward toward the viewer with inward rotation (`rotY = -theta`).
-- **Edge Gradual Blurs (`src/components/react-bits/GradualBlur.tsx`)**:
-  - Attached to left and right edges (`width="6rem"`, `strength={0.9}`, `curve="ease-in"`, `zIndex={30}`).
-- **Bottom Statement**:
-  - Copy:
-    ```
-    A COLLECTION OF ORIGINAL MOTION GRAPHICS AND VISUAL EXPERIMENTS,
-    CRAFTED THROUGH DESIGN, ANIMATION AND AFTER EFFECTS.
-    ```
-  - Styling: `text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase text-center`.
-  - Positioned at `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto`.
-  - Exactly matches the Hero section's bottom bio baseline and footprint.
-
-### D. WebGL Engine (`src/components/originkit/ui/liquid-glass-carousel-custom-style.tsx`)
-- **Video Texture Engine**:
-  - Automatically detects video paths (`/\.(webm|mp4|mov|ogg)($|\?)/i`).
-  - Instantiates background HTML5 `<video>` elements (`autoplay`, `loop`, `muted`, `defaultMuted`, `playsInline`).
-  - Uses `THREE.VideoTexture` with `SRGBColorSpace`.
-  - Captures `videoWidth` / `videoHeight` from `loadedmetadata` for UV cover window scaling.
-  - Video elements tracked in `ownedVideos` and cleanly disposed in `destroy()`.
-- **SDF Shader Corner Clipping (`sdCardBox`)**:
-  - Injected into `MeshBasicMaterial.onBeforeCompile` via `shader.fragmentShader.replace('#include <common>', ...)`.
-  - Replaces `#include <common>` to ensure `#version 300 es` remains on line 1 for WebGL 2 compliance.
-  - Guarded with `#if defined(USE_UV)` and `mat.defines = { USE_UV: "" }`.
-  - Smoothly clips corners using `smoothstep(0.5, -0.5, d)` without texture distortion.
-- **Orchestrated 3D Entrance Reveal**:
-  - Cards fly in from below the screen (`enterFrom: "bottom"`) in a wave from center outward.
-  - Corner radius stays `0` during rise to eliminate pill-shape warping, blending into 18px rounded corners only once cards reach full dimensions.
-  - Auto-scroll is paused during entry (`!inEntry`), preventing the 200px reveal snap/jitter.
-  - `lastInput = 0` at `growEnd` so auto-scroll starts immediately with zero idle delay.
-- **Mobile Touch Scroll & Gesture Disambiguation**:
-  - Canvas DOM element set to `el.style.touchAction = "pan-y"`.
-  - `onPointerDown` does **not** capture pointer on touch immediately.
-  - In `onPointerMove`:
-    - Vertical finger swipe (`dy > dx && dy > 8`): Marks gesture as vertical, releases pointer, allowing the mobile browser to natively scroll the webpage vertically.
-    - Horizontal swipe (`dx >= dy && dx > 8`): Locks in horizontal drag via `el.setPointerCapture` and drags cards.
-    - Desktop mouse dragging captures immediately on `pointerdown` for instant responsiveness.
-  - Mouse wheel is decoupled (`wheel: false`), allowing vertical wheel scrolling to pass through to the page.
+5. **Global Header & Navigation Scaling** ([src/app/components/GlobalNav.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/GlobalNav.tsx)):
+   - Enlarged `(CONTACT)` navigation link on mobile to `text-[13px] sm:text-xs md:text-sm` for legibility and tap accessibility.
+   - Fine-tuned `ADARSH'26` header title scroll target metrics (`targetScale: 0.40` on mobile, `0.22` on desktop) with precise vertical centerline alignment with the contact link.
 
 ---
 
-## 4. Key Problems Solved
+## Decisions Made
 
-1. **WebGL 2 Shader Compilation Crash**:
-   - Fixed by injecting `sdCardBox` via `#include <common>` replacement instead of prepending, preserving `#version 300 es` as the first line of the shader.
-2. **Video Autoplay in Three.js**:
-   - Replaced static `TextureLoader` with HTML5 `<video>` element management and `THREE.VideoTexture`.
-3. **Card Reveal Jitter & Pill-Shape Distortions**:
-   - Paused `autoScroll` during entrance to eliminate the coordinate mismatch snap.
-   - Set corner radius to 0 during entrance and blended in only when scale reaches $\ge 95\%$.
-4. **Mobile Scroll Inability**:
-   - Fixed canvas `touchAction = "none"` by changing to `"pan-y"`.
-   - Added directional gesture disambiguation in pointer event listeners so vertical swipes scroll the page naturally on mobile devices.
-5. **Missing Bottom Text on Mobile Viewports**:
-   - Eliminated flex-column overflow clipping by anchoring the text to `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full`.
-   - Removed conflicting `min-h-screen` and flex centering from `<section>`.
+- **Continuous 2-Page Sticky Light Canvas**:
+  - Combined Page 2 and Page 3 into a continuous `h-[200%]` light canvas (`bg-[#ECECEC]`) inside a pinned sticky container (`h-[360vh]` track).
+  - Page 2 translates `yPercent: -50%` between progress `0.72 -> 1.00`, pulling Page 3 into the viewport seamlessly without any white flash or page seam.
+- **Dynamic Window Resize vs SSR Hydration**:
+  - `BoxCarousel` relies on pixel dimensions to compute `depth / 2` for `translateZ`. If initialized with a desktop default during SSR, mobile hydration caused horizontal box overflow.
+  - Resolved by using direct window evaluation in `useState`, subscribing to `resize`, and using dynamic `key={`${width}-${height}`}` to force Framer Motion to recalculate 3D face positions upon viewport changes.
+- **Split Typography for Brand Heading**:
+  - Rendered `PROJECTS` with `PR` and `JECTS` in `font-sans` (`PP Neue Montreal`) and `O` in `font-display italic` (`PP Eiko`), creating a signature editorial typographic contrast.
 
 ---
 
-## 5. Next Session Roadmap
+## Problems Solved
 
-1. **Subsequent Pages / Sections**:
-   - Design and build Page 3 (e.g., Selected Case Studies, Detailed Project Breakdown, Interactive Labs, or About / Contact Section).
-   - Extend the master scroll track distance in `src/app/page.tsx` (`h-[220vh]` -> `h-[340vh]+`) and configure smooth transition timelines.
-2. **Video Modal / Expanded View (Optional)**:
-   - Clicking a card can open a high-resolution full-screen modal or detailed case-study drawer with video audio unmuted and project write-ups.
-3. **Performance & Asset Preloading**:
-   - Add progressive loading or low-res poster frames for video clips if deployed on slower mobile networks.
+1. **Mobile Edge-to-Edge 3D Cube Clipping**:
+   - Initial mobile render stretched the 3D cube edge-to-edge due to desktop SSR dimension fallback.
+   - Fixed by managing responsive breakpoint dimensions in `Page3.tsx` with resize listeners, bounding mobile widths to `280px` (standard) and `250px` (compact) with comfortable margins.
+2. **Framer Motion v13 `animate()` Overload Mismatch**:
+   - TypeScript error `TS2769` occurred because `Parameters<typeof animate>[2]` extracted `AnimationOptions` from the final DOM overload instead of `ValueAnimationTransition<number>`.
+   - Fixed by importing `ValueAnimationTransition` from `motion-dom` to type `ValueAnimationOptions`.
+3. **Empty / Sparse Screen Appearance on Mobile (Page 2 & Page 3)**:
+   - In Page 2: Repositioned carousel vertically (`translate-y-0`) and broke the bottom statement into 3 balanced, legible lines with increased bottom clearance.
+   - In Page 3: Increased headline, subline, and bottom `PROJECTS` font sizes (`text-[15vw]`) to fill the mobile frame with confident editorial hierarchy.
+4. **Mobile Navigation Legibility**:
+   - Mobile `(CONTACT)` link was too small (`text-[10px]`); boosted to `text-[13px]` and aligned with `ADARSH'26` title center.
+
+---
+
+## Current State
+
+- **TypeScript Compilation**: `npx tsc --noEmit` passes with **0 errors**.
+- **Next.js Production Build**: `npm run build` succeeds in **5.4s**, 4/4 static pages generated cleanly.
+- **Dev Server**: Running on `http://localhost:3000`.
+- **All 3 Pages Fully Cohesive**:
+  - Page 1: Dark chromatic WebGL ReflectShader Hero with scroll-reactive title animation and text blur reveals.
+  - Page 2: Light `#ECECEC` canvas with 3D liquid glass curved carousel (6 WebM motion clips, edge gradual blurs, mobile touch gesture disambiguation).
+  - Page 3: Light `#ECECEC` canvas with interactive 3D rotating cube carousel (Sentinel Terminal & Adarsh'26), active project metadata, interactive underlines, and `PROJECTS` display typography.
+
+---
+
+## Next Session Starts With
+
+1. **Add Further Project Case Studies (Optional)**:
+   - Expand `PROJECTS` array in [Page3.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/Page3.tsx) with additional work or external project links if needed.
+2. **Project Detail Modal / Overlay (Optional)**:
+   - Clicking a cube face or the project link can trigger an expanded modal or full-screen case-study preview.
+3. **Deploy & Staging Verification**:
+   - Ready for Vercel / staging deployment and cross-device testing.
+
+---
+
+## Open Questions
+
+- None. All visual sizing, typography lining, and mobile/desktop calibrations have been validated and approved.

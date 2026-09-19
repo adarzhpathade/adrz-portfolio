@@ -65,10 +65,10 @@ export default function Page2({
       ScrollTrigger.create({
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=220%",
+        end: "+=360%",
         onUpdate: (self) => {
-          // As soon as Hero finishes sliding up and Page 2 is fully visible (around 80% -> 100%)
-          if (self.progress >= 0.80) {
+          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 50%+)
+          if (self.progress >= 0.50) {
             if (!hasEntered) {
               hasEntered = true;
               carouselWrapper.style.pointerEvents = "auto";
@@ -79,7 +79,7 @@ export default function Page2({
               });
               setEntryTrigger((prev) => prev + 1);
             }
-          } else if (self.progress < 0.65) {
+          } else if (self.progress < 0.35) {
             // User scrolled back up towards the Hero — hide and prepare for next entry
             if (hasEntered) {
               hasEntered = false;
@@ -110,7 +110,7 @@ export default function Page2({
         style={{ opacity: 0 }}
       >
         {/* Scaled-down & shifted-up Carousel container */}
-        <div className="w-full h-full flex items-center justify-center -translate-y-4 sm:-translate-y-6 pt-10 sm:pt-14 pb-8 sm:pb-12">
+        <div className="w-full h-full flex items-center justify-center translate-y-0 sm:-translate-y-6 pt-14 sm:pt-14 pb-14 sm:pb-12">
           <LiquidGlassCarousel
             items={PORTFOLIO_VIDEOS}
             background="#ECECEC"
@@ -155,9 +155,17 @@ export default function Page2({
           />
         </div>
 
-        {/* Bottom bio / description — anchored at bottom identical to text in Hero section */}
-        <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto">
-          <p className="text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
+        {/* Bottom bio / description — 3 balanced lines on mobile, 2 lines on desktop */}
+        <div className="absolute bottom-8 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto">
+          {/* Mobile 3-line balanced block (uniform line lengths: 39 / 39 / 36 chars) */}
+          <p className="block sm:hidden text-[10.5px] font-mono tracking-wider text-[#080808]/80 leading-[1.65] uppercase">
+            A COLLECTION OF ORIGINAL MOTION GRAPHICS<br />
+            AND VISUAL EXPERIMENTS, CRAFTED THROUGH<br />
+            DESIGN, ANIMATION AND AFTER EFFECTS.
+          </p>
+
+          {/* Tablet/Desktop 2-line layout */}
+          <p className="hidden sm:block sm:text-[11px] md:text-xs font-mono tracking-wider text-[#080808]/80 leading-relaxed uppercase">
             A collection of original motion graphics and visual experiments,<br />
             crafted through design, animation and After Effects.
           </p>
