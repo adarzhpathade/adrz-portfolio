@@ -159,7 +159,7 @@ class RetroEffectImpl extends Effect {
   }
 }
 
-const WrappedRetroEffect = wrapEffect(RetroEffectImpl);
+const WrappedRetroEffect = wrapEffect(RetroEffectImpl) as any;
 
 const RetroEffect = forwardRef<RetroEffectImpl, { colorNum: number; pixelSize: number }>((props, ref) => {
   const { colorNum, pixelSize } = props;

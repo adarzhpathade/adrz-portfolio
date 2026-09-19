@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import SmoothScroll from "@/components/SmoothScroll";
 
 const neueMontreal = localFont({
   src: [
@@ -47,7 +48,11 @@ export default function RootLayout({
       lang="en" 
       className={`${neueMontreal.variable} ${ppEiko.variable} ${fragmentMono.variable} antialiased h-full`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
+      </body>
     </html>
   );
 }
