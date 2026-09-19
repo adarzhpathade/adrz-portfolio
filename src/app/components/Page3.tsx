@@ -77,24 +77,18 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
     ((activeIndex % PROJECTS.length) + PROJECTS.length) % PROJECTS.length;
   const activeProject = PROJECTS[safeIndex];
 
-  // Responsive dimensions: scaled down by 10% (470x275 on large desktop, 430x250 on laptops, 280x165 on mobile)
+  const DEFAULT_DIMENSIONS = { width: 470, height: 275 };
+
+  // Responsive dimensions: default to desktop for consistent SSR/client hydration
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
-  }>(() => {
-    if (typeof window !== "undefined") {
-      const w = window.innerWidth;
-      if (w < 380) return { width: 250, height: 148 };
-      if (w < 640) return { width: 280, height: 165 };
-      if (w < 768) return { width: 310, height: 180 };
-      if (w < 1024) return { width: 380, height: 220 };
-      if (w < 1440) return { width: 430, height: 250 };
-      return { width: 470, height: 275 };
-    }
-    return { width: 470, height: 275 };
-  });
+  }>(DEFAULT_DIMENSIONS);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     const updateDimensions = () => {
       const w = window.innerWidth;
       if (w < 380) {
@@ -337,19 +331,27 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
             className="shrink-0 flex items-center justify-center order-2 md:order-2 my-3 sm:my-3 md:my-0"
             style={{ opacity: 0 }}
           >
-            <BoxCarousel
-              key={`${width}-${height}`}
-              ref={carouselRef}
-              items={carouselItems}
-              width={width}
-              height={height}
-              direction="right"
-              enableDrag
-              autoPlay
-              autoPlayInterval={4500}
-              perspective={1000}
-              onIndexChange={setActiveIndex}
-            />
+            {mounted ? (
+              <BoxCarousel
+                key={`${width}-${height}`}
+                ref={carouselRef}
+                items={carouselItems}
+                width={width}
+                height={height}
+                direction="right"
+                enableDrag
+                autoPlay
+                autoPlayInterval={4500}
+                perspective={1000}
+                onIndexChange={setActiveIndex}
+              />
+            ) : (
+              <div
+                style={{ width: DEFAULT_DIMENSIONS.width, height: DEFAULT_DIMENSIONS.height }}
+                className="opacity-0 pointer-events-none"
+                aria-hidden="true"
+              />
+            )}
           </div>
 
           {/* Right Column: Technologies (Single line, digital monospace font) */}

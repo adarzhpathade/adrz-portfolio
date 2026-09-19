@@ -39,8 +39,14 @@ Last updated: 2026-09-19 (Session complete, verified with 0 TypeScript/build err
    - Desktop view preserved with the clean 2-line layout (`hidden sm:block`).
 
 5. **Global Header & Navigation Scaling** ([src/app/components/GlobalNav.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/GlobalNav.tsx)):
-   - Enlarged `(CONTACT)` navigation link on mobile to `text-[13px] sm:text-xs md:text-sm` for legibility and tap accessibility.
-   - Fine-tuned `ADARSH'26` header title scroll target metrics (`targetScale: 0.40` on mobile, `0.22` on desktop) with precise vertical centerline alignment with the contact link.
+   - Refined desktop navigation options (`DESIGN — FOLIO`, `(CONTACT)`, `(ABOUT)`) from `md:text-sm` (14px) down to `md:text-xs` (12px) for a sleeker, editorial Swiss typography feel.
+   - Preserved mobile `(CONTACT)` tap target accessibility (`text-[13px] sm:text-xs`).
+   - Dynamic vertical centerline alignment mathematically preserved inline with `ADARSH'26` (`targetScale: 0.22` desktop, `0.40` mobile).
+
+6. **Hero Revealed Text Timing & Clarity Calibration** ([src/app/components/HeroSection.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/HeroSection.tsx)):
+   - Recalibrated GSAP text reveal timeline: words start at progress `0.03` with a total stagger amount of `0.10` and word duration `0.08`, completing 100% by progress `0.21`.
+   - Guaranteed that all 3 lines (including the entire 3rd line `"INTO DIGITAL EXPERIENCES & VISUAL STORIES."`) reach `opacity: 1`, `filter: blur(0px)`, and `y: 0` before the hero scroll aperture finish (`0.26`), holding crystal clear through `0.33` before transitioning to Page 2.
+   - Upgraded word typography to pure `text-white` with `leading-[1.18] sm:leading-[1.2]` and GPU compositing flags (`willChange: "filter, opacity, transform"`, `transform: "translateZ(0)"`).
 
 ---
 
@@ -54,21 +60,31 @@ Last updated: 2026-09-19 (Session complete, verified with 0 TypeScript/build err
   - Resolved by using direct window evaluation in `useState`, subscribing to `resize`, and using dynamic `key={`${width}-${height}`}` to force Framer Motion to recalculate 3D face positions upon viewport changes.
 - **Split Typography for Brand Heading**:
   - Rendered `PROJECTS` with `PR` and `JECTS` in `font-sans` (`PP Neue Montreal`) and `O` in `font-display italic` (`PP Eiko`), creating a signature editorial typographic contrast.
+- **Hero Stagger Window Allocation**:
+  - Allocated text reveal window strictly between `0.03` and `0.21`, leaving a generous hold window (`0.21 -> 0.33`) so all lines remain 100% unblurred when scrolling completes.
+- **SSR Hydration Safe Cube Mounting**:
+  - Rendered a lightweight server-safe placeholder with default dimensions during SSR and initial hydration, mounting `<BoxCarousel>` with measured responsive dimensions only after client mount (`mounted === true`), completely eliminating React hydration mismatches on small viewports.
 
 ---
 
 ## Problems Solved
 
-1. **Mobile Edge-to-Edge 3D Cube Clipping**:
+1. **BoxCarousel React Hydration Mismatch (`width: 280` vs `"470px"`)**:
+   - Next.js threw a red runtime error overlay on mobile viewports (`< 640px`) because `useState` initialized with `typeof window !== "undefined"` checking `window.innerWidth`. On SSR, it rendered `470px × 275px`, but on the client initial hydration pass, it rendered `280px × 165px`.
+   - Fixed by initializing `dimensions` with consistent `DEFAULT_DIMENSIONS` on both server and client, deferring responsive dimension updates to `useEffect`, and mounting `<BoxCarousel>` only once `mounted === true`.
+2. **Hero Revealed Text 3rd Line Blur Lingering**:
+   - Previously, words were staggered with individual durations extending completion to progress `0.45`, far past the Phase 2 transition point (`0.33`). This left Line 3 permanently blurred at `blur(6px - 8.5px)` when the hero scroll finished.
+   - Fixed by constraining word animation between `0.03 -> 0.21` (`stagger: { amount: 0.10 }`, `duration: 0.08`). At scroll `850px - 1000px`, all words in Line 3 are now verified at `blur(0px)` and `opacity: 1`.
+3. **Mobile Edge-to-Edge 3D Cube Clipping**:
    - Initial mobile render stretched the 3D cube edge-to-edge due to desktop SSR dimension fallback.
    - Fixed by managing responsive breakpoint dimensions in `Page3.tsx` with resize listeners, bounding mobile widths to `280px` (standard) and `250px` (compact) with comfortable margins.
-2. **Framer Motion v13 `animate()` Overload Mismatch**:
+4. **Framer Motion v13 `animate()` Overload Mismatch**:
    - TypeScript error `TS2769` occurred because `Parameters<typeof animate>[2]` extracted `AnimationOptions` from the final DOM overload instead of `ValueAnimationTransition<number>`.
    - Fixed by importing `ValueAnimationTransition` from `motion-dom` to type `ValueAnimationOptions`.
-3. **Empty / Sparse Screen Appearance on Mobile (Page 2 & Page 3)**:
+5. **Empty / Sparse Screen Appearance on Mobile (Page 2 & Page 3)**:
    - In Page 2: Repositioned carousel vertically (`translate-y-0`) and broke the bottom statement into 3 balanced, legible lines with increased bottom clearance.
    - In Page 3: Increased headline, subline, and bottom `PROJECTS` font sizes (`text-[15vw]`) to fill the mobile frame with confident editorial hierarchy.
-4. **Mobile Navigation Legibility**:
+6. **Mobile Navigation Legibility**:
    - Mobile `(CONTACT)` link was too small (`text-[10px]`); boosted to `text-[13px]` and aligned with `ADARSH'26` title center.
 
 ---
@@ -76,9 +92,9 @@ Last updated: 2026-09-19 (Session complete, verified with 0 TypeScript/build err
 ## Current State
 
 - **TypeScript Compilation**: `npx tsc --noEmit` passes with **0 errors**.
-- **Next.js Production Build**: `npm run build` succeeds in **5.4s**, 4/4 static pages generated cleanly.
+- **Next.js Production Build**: `npm run build` succeeds in **2.6s**, 4/4 static pages generated cleanly.
 - **Dev Server**: Running on `http://localhost:3000`.
-- **All 3 Pages Fully Cohesive**:
+- **Zero Hydration Errors**: Next.js badge confirms 0 issues across both desktop and mobile viewports.
   - Page 1: Dark chromatic WebGL ReflectShader Hero with scroll-reactive title animation and text blur reveals.
   - Page 2: Light `#ECECEC` canvas with 3D liquid glass curved carousel (6 WebM motion clips, edge gradual blurs, mobile touch gesture disambiguation).
   - Page 3: Light `#ECECEC` canvas with interactive 3D rotating cube carousel (Sentinel Terminal & Adarsh'26), active project metadata, interactive underlines, and `PROJECTS` display typography.

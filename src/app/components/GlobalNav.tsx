@@ -165,7 +165,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="DESIGN — FOLIO"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[13px] sm:text-xs md:text-sm tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
+              className="font-mono text-[13px] sm:text-xs md:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
             />
           </div>
           <div className="inline-block">
@@ -173,7 +173,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="(Contact)"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[13px] sm:text-xs md:text-sm tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
+              className="font-mono text-[13px] sm:text-xs md:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
               onClick={() => {
                 const contactEl = document.getElementById("contact");
                 if (contactEl) contactEl.scrollIntoView({ behavior: "smooth" });
@@ -185,7 +185,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="(About)"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[13px] sm:text-xs md:text-sm tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
+              className="font-mono text-[13px] sm:text-xs md:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-[#080808]"
               onClick={() => {
                 const aboutEl = document.getElementById("about");
                 if (aboutEl) aboutEl.scrollIntoView({ behavior: "smooth" });

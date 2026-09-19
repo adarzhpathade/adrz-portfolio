@@ -56,14 +56,14 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
     tl.to(rectangle, {
       yPercent: -100,
       ease: "none",
-      duration: 0.28,
+      duration: 0.26,
     }, 0);
 
-    // 2. Center subtitle fades out
+    // 2. Center subtitle fades out quickly
     tl.to(centerText, {
       opacity: 0,
       ease: "power2.in",
-      duration: 0.15,
+      duration: 0.12,
     }, 0);
 
     // 3. Initial hero side links fade out quickly on scroll
@@ -73,34 +73,44 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
       ease: "power2.in",
     }, 0);
 
-    // 4. Explicitly ensure 3-line text starts completely hidden on initial load/refresh
+    // 4. 3-line text words reveal with blur focus and subtle y translation
+    // Starts at 0.03, staggers across 0.10, duration 0.08 per word.
+    // By 0.21, EVERY word (including the entire last line) is 100% unblurred and sharp!
     const words = revealText.querySelectorAll<HTMLElement>(".reveal-word");
-    gsap.set(words, { opacity: 0, filter: "blur(12px)", y: 30 });
-
-    // 5. 3-line text words reveal with blur and y translation as user scrolls
-    tl.to(words, 
+    tl.fromTo(
+      words,
+      {
+        opacity: 0,
+        filter: "blur(12px)",
+        y: 20,
+      },
       {
         opacity: 1,
         filter: "blur(0px)",
         y: 0,
-        stagger: 0.01,
-        ease: "none",
-        duration: 0.24,
-      }, 0.04
+        stagger: {
+          amount: 0.10,
+          ease: "power1.inOut",
+        },
+        ease: "power2.out",
+        duration: 0.08,
+      },
+      0.03
     );
 
-    // 6. Bottom "DESIGN — Folio" fades out with blur
+    // 5. Bottom "DESIGN — Folio" fades out with blur
     tl.to(bottomHeading, {
       opacity: 0,
       filter: "blur(12px)",
       ease: "power2.in",
-      duration: 0.15,
+      duration: 0.12,
     }, 0);
 
-    // --- PHASE 1.5: Hold Hero Revealed State (0.28 -> 0.33) ---
+    // --- PHASE 1.5: Hold Hero Revealed State (0.26 -> 0.33) ---
+    // All 3 lines hold 100% crystal clear with zero blur while ReflectShader pulses
 
     // --- PHASE 2: Transition to Page 2 (0.33 -> 0.56) ---
-    // 7. 3-line text fades out and blurs upwards
+    // 6. 3-line text fades out and blurs upwards
     tl.to(revealText, {
       opacity: 0,
       filter: "blur(12px)",
@@ -109,7 +119,7 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
       duration: 0.09,
     }, 0.33);
 
-    // 8. Hero section physically slides up and out of the viewport,
+    // 7. Hero section physically slides up and out of the viewport,
     // revealing the light-colored Page 2 sitting underneath
     tl.to(section, {
       yPercent: -100,
@@ -188,12 +198,17 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
         {/* 3-Line Text — hidden by default, revealed on scroll, blurs out on transition to Page 2 */}
         <div ref={revealTextRef} className="w-full text-center px-4 flex flex-col items-center justify-center z-20 absolute bottom-12 md:bottom-16 pointer-events-none">
           {REVEAL_LINES.map((line, lineIndex) => (
-            <p key={lineIndex} className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-[450] tracking-wide uppercase text-white/80 leading-[1.1] flex flex-wrap justify-center gap-x-[0.35em] gap-y-0">
+            <p key={lineIndex} className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-[450] tracking-wide uppercase text-white leading-[1.18] sm:leading-[1.2] flex flex-wrap justify-center gap-x-[0.35em] gap-y-0">
               {line.split(/\s+/).map((word, wordIndex) => (
                 <span 
                   key={`${lineIndex}-${wordIndex}`} 
                   className="reveal-word inline-block opacity-0"
-                  style={{ opacity: 0, filter: "blur(12px)" }}
+                  style={{ 
+                    opacity: 0, 
+                    filter: "blur(12px)",
+                    willChange: "filter, opacity, transform",
+                    transform: "translateZ(0)",
+                  }}
                 >
                   {word}
                 </span>
