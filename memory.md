@@ -1,84 +1,134 @@
-# Memory — Page 2 Liquid Glass Carousel with Video Autoplay & Scroll Entrance
+# Memory — ADARSH'25 Portfolio Architecture & State
 
-Last updated: 2026-09-19 16:35:00
+Last updated: 2026-09-19 (Session complete, pushed to `origin/main`)
 
-## What was built
+---
 
-- **WebGL Video Texture Engine (`src/components/originkit/ui/liquid-glass-carousel-custom-style.tsx`):**
-  - Upgraded `LiquidGlassCarousel` texture loader to detect video source paths (`/\.(webm|mp4|mov|ogg)($|\?)/i`).
-  - Automatically instantiates and manages background HTML5 `<video>` elements configured for seamless autoplay (`autoplay`, `loop`, `muted`, `defaultMuted`, `playsInline`).
-  - Added user interaction autoplay unlock listener (`pointerdown`, `touchstart`) as a fallback if browser autoplay policy delays playback.
-  - Binds each video to a `THREE.VideoTexture` rendered at 60fps with `SRGBColorSpace`.
-  - Dynamically captures `videoWidth` and `videoHeight` from `loadedmetadata` to adjust aspect ratios and UV cover window coordinates.
-  - Added thorough video lifecycle management (`ownedVideos`) to properly pause, detach, and unload all video elements upon disposal/destruction to avoid memory leaks.
-  - Added `entryTrigger` prop support to allow parent components to re-trigger card rise animations dynamically.
-  - Updated default preset background to `#ECECEC` with refined liquid glass lens parameters (`dispersion: 6`, `ringColor: "rgba(0, 0, 0, 0.08)"`).
+## 1. Project Overview & Repository State
 
-- **Page 2 Carousel Integration & Scroll Entrance (`src/app/components/Page2.tsx`):**
-  - Integrated 6 portfolio video clips from `public/videos/`:
-    - `Advance Animations.webm`
-    - `Coffee Cup.webm`
-    - `Human Brain.webm`
-    - `Object Centric Animation - 2.webm`
-    - `Text Centric Animation - 1.webm`
-    - `What You See -.webm`
-  - Integrated GSAP `ScrollTrigger` synced to `#main-scroll-container`:
-    - Carousel container starts hidden below the viewport (`y: 180px`, `opacity: 0`, `pointerEvents: "none"`).
-    - As soon as the Hero section curtain slides up to uncover Page 2 (`progress >= 0.82`), the carousel smoothly glides up to `y: 0`, `opacity: 1` over `0.9s` with `power3.out` easing, enabling pointer interactions and triggering the 3D card rise effect.
-    - When scrolling back up towards the Hero (`progress < 0.60`), the carousel smoothly glides back down (`y: 180px`, `opacity: 0`) and disables pointer events so it will cleanly replay next time Page 2 is reached.
+- **Repository**: `https://github.com/adarzhpathade/adrz-portfolio.git`
+- **Branch**: `main` (Latest commit `50ede16`, working tree clean).
+- **Core Tech Stack**:
+  - **Framework**: Next.js 16.3.5 (App Router, Turbopack)
+  - **Runtime & UI**: React 19.2.8, TypeScript 5, Tailwind CSS v4
+  - **3D Graphics & Shaders**: Three.js 0.186.0, WebGL 2, Custom GLSL shaders
+  - **Animation**: GSAP 3.15.0 (`ScrollTrigger`, `@gsap/react`), Framer Motion 13.4.0
+  - **Smooth Scrolling**: Lenis 1.3.26 synchronized with GSAP ticker
+  - **Typography**: PP Neue Montreal (Sans), PP Eiko (Display Italic), Fragment Mono (Monospace)
+- **Production Build Status**: `npm run build` and `npx tsc --noEmit` pass with **0 errors**.
 
-- **Page Layer Pointer Events (`src/app/page.tsx`):**
-  - Updated Page 2 wrapper with `pointer-events-auto`, enabling smooth horizontal drag, click-to-focus, and wheel navigation on the carousel once Page 2 is visible.
+---
 
-## Decisions made
+## 2. Page Architecture & Master Scroll System
 
-- **Native THREE.VideoTexture over DOM Video Layering**:
-  - Embedding the videos directly as Three.js textures preserves the 3D depth, perspective, card tilting, and the liquid glass lens refraction/distortion shader effects across all cards.
-- **ScrollTrigger Progress Threshold for Entrance**:
-  - Triggering the reveal tween at `progress >= 0.82` ensures the carousel glides up precisely as the physical curtain opens, rather than prematurely animating while covered by the hero.
-- **Bidirectional Smooth Reset**:
-  - Hiding the carousel back down when scrolling back up (`progress < 0.60`) ensures a deterministic experience in both directions.
+The entire application runs on a pinned sticky scroll container in `src/app/page.tsx`:
+- **Scroll Track**: `h-[220vh]` invisible div providing the scroll distance for GSAP ScrollTrigger.
+- **Sticky Viewport**: `sticky top-0 left-0 w-full h-screen overflow-hidden`.
+- **Layer Stacking Order**:
+  - `z-30`: **Global Navigation Header (`GlobalNav.tsx`)** — Persistent across pages.
+  - `z-20`: **Hero Section (`HeroSection.tsx`)** — Slides up and out of the viewport on scroll (`yPercent: -100` between scroll progress 0.55 and 1.00).
+  - `z-10`: **Page 2 (`Page2.tsx`)** — Sits directly beneath Hero; fades in and triggers the 3D card carousel entrance when scroll progress reaches `>= 0.80`.
 
-## Problems solved
+---
 
-- **Three.js TextureLoader Video Incompatibility**:
-  - Standard `THREE.TextureLoader.load()` only handles static images, which previously caused video paths to error out and fall back to numbered canvas placeholders. Replaced with `THREE.VideoTexture` and video lifecycle management.
-- **Autoplay Policy Constraints**:
-  - Added both `defaultMuted`, `muted`, `playsinline`, and a one-time window pointerdown listener fallback so video playback starts unconditionally.
+## 3. Component Deep Dive
 
-## Current state
+### A. Global Navigation (`src/app/components/GlobalNav.tsx`)
+- **Title Tracking Animation**:
+  - Starts as the main hero headline (`ADARSH'25`, large display font).
+  - On scroll (progress 0.55 -> 0.92), scales down (`0.22` desktop, `0.36` mobile) and translates to the top-left header position (`x: 18px / 10px`, `y: 12px / 8px`).
+  - Color transitions smoothly from white (Hero) to dark `#080808` (Page 2).
+- **Responsive Nav Links**: Right-aligned navigation links (`(Contact)`) stay inline with the title's vertical centerline on Page 2.
 
-- Hero section and curtain reveal function smoothly.
-- Page 2 displays the Liquid Glass Carousel with all 6 videos autoplaying in 3D.
-- Bottom-to-top reveal animation triggers as Page 2 comes fully into screen.
-- Carousel automatically scrolls on repeat (`speed: 65px/s`, seamlessly wraps modulo `totalWidth`) and resumes after user drags.
-- 3D cylindrical side curvature configured as a concave wrap-around arc: center part curves inward into the screen (negative Z), while the sides curve forward toward the viewer with inward rotation (`rotY = -theta`).
-- Center liquid glass lens effect is temporarily disabled (`lens={{ enabled: false }}`).
-- Integrated `<GradualBlur />` on both left and right edges with refined, subtle parameters (`width="6rem"`, `strength={0.9}`, `curve="ease-in"`, `exponential={false}`) so cards softly dissolve at the screen edges without overwhelming the viewport.
-- Card Edge Curving: Injected a signed-distance-field (SDF) box corner shader (`sdCardBox`) into `MeshBasicMaterial.onBeforeCompile` with `uCornerRadius` (22px) and dynamic `uCardSize` updates, replacing `#include <common>` to preserve `#version 300 es` on line 1, and guarded with `USE_UV` to ensure 100% stable WebGL 2 shader compilation.
-- Jitter Elimination & Restored Signature Incoming Animation:
-  - Restored the full signature 3D incoming card animation: cards fly in from below the screen (`enterFrom: "bottom"`) in an orchestrated wave from center outward, fanning out into the 3D curved space, and expanding from initial height to full size with `EXPO_INOUT` easing.
-  - Eliminated the incoming snap/jitter: paused `autoScroll` while `inEntry` (`entryActive || entrySettled`) is running so `scroll` stays locked to the center card until cards are fully in place. When entry completes, `off` and `centerX` match with 0px difference, transitioning seamlessly into smooth continuous auto-scroll.
-  - Sharp Edges During Reveal: Kept `uCornerRadius = 0` during the entire reveal and fanning out phase, completely eliminating the pill shape distortion. The subtle corner curvature (22px) only blends in once the cards reach their full dimensions.
-  - Immediate Scroll Upon Scaling: Removed the 1.0s idle delay after card scale completion (`lastInput = 0` at `growEnd`), and tightened scale timing so auto-scroll begins immediately as soon as cards reach their full size.
-  - Decoupled Mouse Scroll from Cards: Set `wheel: false` and `touchAction: "pan-y"` so mouse wheel scrolling passes cleanly through to the main webpage, allowing vertical navigation to subsequent pages. Dragging with mouse/touch (`drag: true`) remains fully functional on the cards.
-  - Fixed carousel wrapping math with canonical screen-centered continuous formula (`REPEATS = 5`), ensuring cards never swap mesh instances in the viewport.
-  - Eliminated auto-scroll lag oscillation by advancing `scroll` and `target` in lockstep during steady auto-scroll, with `scrollEnergy` zeroed out so card scale remains rock-solid without vibrating.
-- Scaled Down Cards & Elevated Upward Layout:
-  - Scaled cards down by ~20%: `cardWidth={240}` (down from 300), `cardHeight={390}` (down from 490), `gap={30}` (down from 38), and `cornerRadius={18}` (down from 22).
-  - Shifted carousel upward (`-translate-y-4 sm:-translate-y-6` inside a `flex-1 min-h-0` wrapper) to provide generous visual breathing room in the lower viewport.
-  - Bottom Statement Matching Hero Section:
-    - Text: `A collection of original motion graphics and visual experiments,` / `crafted through design, animation and After Effects.`
-    - Styling: `text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase text-center`.
-    - Positioned at `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto`, guaranteeing 100% visibility on all phone screens without being clipped off by flex overflow.
-- Mobile Touch Scroll & Gesture Disambiguation:
-  - Set WebGL canvas `el.style.touchAction = "pan-y"`, allowing the mobile browser to process native vertical touch scroll events.
-  - Added smart touch gesture disambiguation in `onPointerDown`/`onPointerMove`:
-    - Vertical finger swipes (`dy > dx && dy > 8`) immediately yield control to native browser page scrolling.
-    - Horizontal swipes (`dx >= dy && dx > 8`) lock into carousel card drag with `setPointerCapture`.
-    - Desktop mouse dragging remains immediate and unaffected.
-- Production build passes with zero errors (`npm run build`).
+### B. Hero Section (`src/app/components/HeroSection.tsx`)
+- **WebGL ReflectShader**: Chromatic reflection background responding to scroll progression.
+- **Micro-Interactions**:
+  - `LetterSwapPingPong`: Interactive letter swap on hover.
+  - `BlurText`: Smooth word-by-word blur reveals on scroll.
+- **Bottom Bio**:
+  - Anchored at `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center`.
+  - Typography: `text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase`.
 
-## Next session starts with
+### C. Page 2 — 3D Liquid Glass Carousel (`src/app/components/Page2.tsx`)
+- **6 Portfolio WebM Clips** (`public/videos/`):
+  1. `Advance Animations.webm`
+  2. `Coffee Cup.webm`
+  3. `Human Brain.webm`
+  4. `Object Centric Animation - 2.webm`
+  5. `Text Centric Animation - 1.webm`
+  6. `What You See -.webm`
+- **Proportions**:
+  - `cardWidth: 240px` (scaled down ~20% from original 300px for refined hierarchy)
+  - `cardHeight: 390px` (scaled down ~20% from 490px)
+  - `gap: 30px`
+  - `cornerRadius: 18px`
+- **Curvature & Layout**:
+  - Shifted upward via `-translate-y-4 sm:-translate-y-6` with top padding `pt-10 sm:pt-14` and bottom padding `pb-8 sm:pb-12`.
+  - Concave 3D arc: center cards curve inward into the screen (negative Z), outer cards curve forward toward the viewer with inward rotation (`rotY = -theta`).
+- **Edge Gradual Blurs (`src/components/react-bits/GradualBlur.tsx`)**:
+  - Attached to left and right edges (`width="6rem"`, `strength={0.9}`, `curve="ease-in"`, `zIndex={30}`).
+- **Bottom Statement**:
+  - Copy:
+    ```
+    A COLLECTION OF ORIGINAL MOTION GRAPHICS AND VISUAL EXPERIMENTS,
+    CRAFTED THROUGH DESIGN, ANIMATION AND AFTER EFFECTS.
+    ```
+  - Styling: `text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase text-center`.
+  - Positioned at `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto`.
+  - Exactly matches the Hero section's bottom bio baseline and footprint.
 
-- Building next pages or fine-tuning any specific typography, animations, or video details requested by user.
+### D. WebGL Engine (`src/components/originkit/ui/liquid-glass-carousel-custom-style.tsx`)
+- **Video Texture Engine**:
+  - Automatically detects video paths (`/\.(webm|mp4|mov|ogg)($|\?)/i`).
+  - Instantiates background HTML5 `<video>` elements (`autoplay`, `loop`, `muted`, `defaultMuted`, `playsInline`).
+  - Uses `THREE.VideoTexture` with `SRGBColorSpace`.
+  - Captures `videoWidth` / `videoHeight` from `loadedmetadata` for UV cover window scaling.
+  - Video elements tracked in `ownedVideos` and cleanly disposed in `destroy()`.
+- **SDF Shader Corner Clipping (`sdCardBox`)**:
+  - Injected into `MeshBasicMaterial.onBeforeCompile` via `shader.fragmentShader.replace('#include <common>', ...)`.
+  - Replaces `#include <common>` to ensure `#version 300 es` remains on line 1 for WebGL 2 compliance.
+  - Guarded with `#if defined(USE_UV)` and `mat.defines = { USE_UV: "" }`.
+  - Smoothly clips corners using `smoothstep(0.5, -0.5, d)` without texture distortion.
+- **Orchestrated 3D Entrance Reveal**:
+  - Cards fly in from below the screen (`enterFrom: "bottom"`) in a wave from center outward.
+  - Corner radius stays `0` during rise to eliminate pill-shape warping, blending into 18px rounded corners only once cards reach full dimensions.
+  - Auto-scroll is paused during entry (`!inEntry`), preventing the 200px reveal snap/jitter.
+  - `lastInput = 0` at `growEnd` so auto-scroll starts immediately with zero idle delay.
+- **Mobile Touch Scroll & Gesture Disambiguation**:
+  - Canvas DOM element set to `el.style.touchAction = "pan-y"`.
+  - `onPointerDown` does **not** capture pointer on touch immediately.
+  - In `onPointerMove`:
+    - Vertical finger swipe (`dy > dx && dy > 8`): Marks gesture as vertical, releases pointer, allowing the mobile browser to natively scroll the webpage vertically.
+    - Horizontal swipe (`dx >= dy && dx > 8`): Locks in horizontal drag via `el.setPointerCapture` and drags cards.
+    - Desktop mouse dragging captures immediately on `pointerdown` for instant responsiveness.
+  - Mouse wheel is decoupled (`wheel: false`), allowing vertical wheel scrolling to pass through to the page.
+
+---
+
+## 4. Key Problems Solved
+
+1. **WebGL 2 Shader Compilation Crash**:
+   - Fixed by injecting `sdCardBox` via `#include <common>` replacement instead of prepending, preserving `#version 300 es` as the first line of the shader.
+2. **Video Autoplay in Three.js**:
+   - Replaced static `TextureLoader` with HTML5 `<video>` element management and `THREE.VideoTexture`.
+3. **Card Reveal Jitter & Pill-Shape Distortions**:
+   - Paused `autoScroll` during entrance to eliminate the coordinate mismatch snap.
+   - Set corner radius to 0 during entrance and blended in only when scale reaches $\ge 95\%$.
+4. **Mobile Scroll Inability**:
+   - Fixed canvas `touchAction = "none"` by changing to `"pan-y"`.
+   - Added directional gesture disambiguation in pointer event listeners so vertical swipes scroll the page naturally on mobile devices.
+5. **Missing Bottom Text on Mobile Viewports**:
+   - Eliminated flex-column overflow clipping by anchoring the text to `absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full`.
+   - Removed conflicting `min-h-screen` and flex centering from `<section>`.
+
+---
+
+## 5. Next Session Roadmap
+
+1. **Subsequent Pages / Sections**:
+   - Design and build Page 3 (e.g., Selected Case Studies, Detailed Project Breakdown, Interactive Labs, or About / Contact Section).
+   - Extend the master scroll track distance in `src/app/page.tsx` (`h-[220vh]` -> `h-[340vh]+`) and configure smooth transition timelines.
+2. **Video Modal / Expanded View (Optional)**:
+   - Clicking a card can open a high-resolution full-screen modal or detailed case-study drawer with video audio unmuted and project write-ups.
+3. **Performance & Asset Preloading**:
+   - Add progressive loading or low-res poster frames for video clips if deployed on slower mobile networks.
