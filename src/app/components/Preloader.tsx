@@ -266,16 +266,16 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
           </div>
 
         </div>
+      </div>
 
-        {/* Bottom Digital Progress Counter inside () */}
-        <div
-          ref={counterRef}
-          className="absolute bottom-[6vh] sm:bottom-[7vh] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center"
-        >
-          <span className="font-mono text-[clamp(11px,0.95vw,1.45vh)] text-text-light/75 tracking-widest uppercase tabular-nums">
-            (&nbsp;<span ref={counterNumberRef}>00</span>%&nbsp;)
-          </span>
-        </div>
+      {/* Bottom Digital Progress Counter — outside backdrop, positioned to the fixed viewport */}
+      <div
+        ref={counterRef}
+        className="absolute bottom-[max(3vh,env(safe-area-inset-bottom,12px))] sm:bottom-[7vh] left-1/2 -translate-x-1/2 z-[60] pointer-events-none text-center"
+      >
+        <span className="font-mono text-[clamp(11px,0.95vw,1.45vh)] text-text-light/75 tracking-widest uppercase tabular-nums">
+          (&nbsp;<span ref={counterNumberRef}>00</span>%&nbsp;)
+        </span>
       </div>
     </div>
   );
