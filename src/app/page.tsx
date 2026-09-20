@@ -64,12 +64,13 @@ export default function Home() {
       const lightCanvas = lightCanvasRef.current;
       if (!lightCanvas) return;
 
+      const isMobile = window.innerWidth < 768;
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: "#main-scroll-container",
           start: "top top",
           end: "+=600%",
-          scrub: 1,
+          scrub: isMobile ? 0.35 : 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             // 0.00 -> 0.24: Hero (Dark)

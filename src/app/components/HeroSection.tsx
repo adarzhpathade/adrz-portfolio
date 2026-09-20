@@ -51,13 +51,14 @@ export default function HeroSection({
 
     if (!section || !rectangle || !about || !contact || !centerText || !heroTitle || !revealText || !bottomHeading) return;
 
+    const isMobile = window.innerWidth < 768;
     // Master scroll timeline synchronized with GlobalNav, Page2, and Page3
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
         end: "+=600%", 
-        scrub: 1,
+        scrub: isMobile ? 0.35 : 1,
         invalidateOnRefresh: true,
       },
     });
@@ -165,8 +166,8 @@ export default function HeroSection({
       <div className="relative z-20 mix-blend-difference w-full h-[80vh] flex flex-col justify-between pt-0 pb-4 pointer-events-none">
         <div className="w-full relative flex flex-col items-center pt-4 md:pt-0">
           {/* Main Hero Heading — actively reacts with animated ReflectShader background via mix-blend-difference */}
-          <div ref={heroTitleRef} id="hero-main-title" className="z-10 text-center flex items-center justify-center select-none pointer-events-auto">
-            <h1 className="text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
+          <div ref={heroTitleRef} id="hero-main-title" className="z-10 text-center flex items-center justify-center select-none pointer-events-auto px-2">
+            <h1 className="text-[clamp(2.4rem,11.5vw,17vh)] sm:text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
               <span className="inline-flex">
                 <span>ADARSH</span>
                 <span className="font-display italic font-normal normal-case ml-[0.05em]">
@@ -221,7 +222,7 @@ export default function HeroSection({
         {/* 3-Line Text — hidden by default, revealed on scroll, blurs out on transition to Page 2 */}
         <div ref={revealTextRef} className="w-full text-center px-4 flex flex-col items-center justify-center z-20 absolute bottom-[7vh] md:bottom-[8vh] pointer-events-none">
           {REVEAL_LINES.map((line, lineIndex) => (
-            <p key={lineIndex} className="text-[clamp(1.1rem,2.4vw,3.6vh)] font-[450] tracking-wide uppercase text-white leading-[1.18] sm:leading-[1.2] flex flex-wrap justify-center gap-x-[0.35em] gap-y-0">
+            <p key={lineIndex} className="text-[clamp(0.95rem,2.2vw,3.2vh)] sm:text-[clamp(1.1rem,2.4vw,3.6vh)] font-[450] tracking-wide uppercase text-white leading-[1.25] sm:leading-[1.2] flex flex-wrap justify-center gap-x-[0.35em] gap-y-0 px-2 max-w-[95vw]">
               {line.split(/\s+/).map((word, wordIndex) => (
                 <span 
                   key={`${lineIndex}-${wordIndex}`} 
@@ -260,9 +261,9 @@ export default function HeroSection({
         initial={{ opacity: 0 }}
         animate={{ opacity: isReady ? 1 : 0 }}
         transition={{ delay: 0.3, duration: 0.7 }}
-        className="absolute bottom-[1.5vh] left-1/2 -translate-x-1/2 w-full text-center z-10 pointer-events-none"
+        className="absolute bottom-[1.5vh] left-1/2 -translate-x-1/2 w-full text-center z-10 pointer-events-none px-4"
       >
-        <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
+        <p className="text-[clamp(9px,2.4vw,12px)] sm:text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
           Creative Technologist Based in India<br />
           Building Digital Experiences Through Code, AI &amp; Motion.
         </p>

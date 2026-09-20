@@ -745,7 +745,9 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
 
-    renderer.setPixelRatio(still ? 1 : Math.min(window.devicePixelRatio || 1, 2))
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768
+    const maxDpr = isMobile ? 1.25 : 2
+    renderer.setPixelRatio(still ? 1 : Math.min(window.devicePixelRatio || 1, maxDpr))
     renderer.setSize(W, H)
 
     const clearColor = new THREE.Color()
@@ -1388,36 +1390,43 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
                 finalH = curH
                 finalW = widthAt(i, curH)
 
+                const cSrc = centerIndex(scroll)
                 const midRep = Math.floor(REPEATS / 2)
-                if (rep !== midRep) {
+                const centerPoolIdx = midRep * N + cSrc
+                const di = poolIdx - centerPoolIdx
+
+                const maxDi = Math.ceil((half + buffer) / Math.max(1, slotWidth(0))) + 1
+                if (Math.abs(di) > maxDi) {
                     p.mesh.visible = false
                     lastCenterX[poolIdx] = undefined
                     return
                 }
-                const cSrc = centerIndex(scroll)
-                let di = i - cSrc
-                if (di > N / 2) di -= N
-                if (di < -N / 2) di += N
-                const slotH = (s: number) => {
-                    const gg = growArr[midRep * N + s] || 0
+
+                const slotH = (poolIndex: number) => {
+                    const gg = growArr[poolIndex] || 0
+                    const s = poolIndex % N
                     return startH + (cardHeight(s) - startH) * gg
                 }
                 let off = 0
                 if (di > 0) {
                     for (let k = 0; k < di; k++) {
-                        const sa = (((cSrc + k) % N) + N) % N
-                        const sb = (((cSrc + k + 1) % N) + N) % N
+                        const idxA = Math.max(0, Math.min(pool.length - 1, centerPoolIdx + k))
+                        const idxB = Math.max(0, Math.min(pool.length - 1, centerPoolIdx + k + 1))
+                        const sa = idxA % N
+                        const sb = idxB % N
                         off +=
-                            (widthAt(sa, slotH(sa)) + widthAt(sb, slotH(sb))) /
+                            (widthAt(sa, slotH(idxA)) + widthAt(sb, slotH(idxB))) /
                                 2 +
                             pp.gap
                     }
                 } else if (di < 0) {
                     for (let k = 0; k < -di; k++) {
-                        const sa = (((cSrc - k) % N) + N) % N
-                        const sb = (((cSrc - k - 1) % N) + N) % N
+                        const idxA = Math.max(0, Math.min(pool.length - 1, centerPoolIdx - k))
+                        const idxB = Math.max(0, Math.min(pool.length - 1, centerPoolIdx - k - 1))
+                        const sa = idxA % N
+                        const sb = idxB % N
                         off -=
-                            (widthAt(sa, slotH(sa)) + widthAt(sb, slotH(sb))) /
+                            (widthAt(sa, slotH(idxA)) + widthAt(sb, slotH(idxB))) /
                                 2 +
                             pp.gap
                     }
@@ -1846,27 +1855,21 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         snapped = true
 
         layout()
-        const visible: number[] = []
-        for (let k = 0; k < lastCenterX.length; k++) {
-            if (lastCenterX[k] !== undefined) visible.push(k)
-        }
-
-        const tl = new Timeline(E.delay)
 
         const cSrcG = centerIndex(scroll)
         const midRepG = Math.floor(REPEATS / 2)
+        const centerPoolIdx = midRepG * N + cSrcG
         const growList: { idx: number; rank: number }[] = []
         let maxRank = 0
+
         for (let k = 0; k < lastCenterX.length; k++) {
             if (lastCenterX[k] === undefined) continue
-            if (Math.floor(k / N) !== midRepG) continue
-            let di = (k % N) - cSrcG
-            if (di > N / 2) di -= N
-            if (di < -N / 2) di += N
-            const r = Math.abs(di)
-            maxRank = Math.max(maxRank, r)
-            growList.push({ idx: k, rank: r })
+            const di = Math.abs(k - centerPoolIdx)
+            maxRank = Math.max(maxRank, di)
+            growList.push({ idx: k, rank: di })
         }
+
+        const tl = new Timeline(E.delay)
 
         let lastRiseEnd = 0
         growList.forEach((o) => {
@@ -2024,8 +2027,30 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         })
     }
 
+    let isIntersecting = true
+    const io = new IntersectionObserver((entries) => {
+        const next = entries[0]?.isIntersecting ?? true
+        if (next !== isIntersecting) {
+            isIntersecting = next
+            if (isIntersecting) {
+                ownedVideos.forEach((v) => {
+                    v.play().catch(() => {})
+                })
+            } else {
+                ownedVideos.forEach((v) => {
+                    v.pause()
+                })
+            }
+        }
+    }, { threshold: 0.01 })
+    io.observe(mount)
+
     function tick(t: number) {
         raf = requestAnimationFrame(tick)
+        if (!isIntersecting) {
+            lastT = t
+            return
+        }
         const dt = Math.min(0.05, Math.max(0, (t - lastT) / 1000))
         lastT = t
         step(dt)
@@ -2074,6 +2099,7 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         if (frameReq) cancelAnimationFrame(frameReq)
         cancelAnimationFrame(raf)
         ro.disconnect()
+        io.disconnect()
         el.removeEventListener("wheel", onWheel)
         el.removeEventListener("pointerdown", onPointerDown)
         el.removeEventListener("pointermove", onPointerMove)

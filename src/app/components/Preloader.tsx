@@ -244,7 +244,7 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
                 willChange: "transform",
               }}
             >
-              <h1 className="text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
+              <h1 className="text-[clamp(2.4rem,11.5vw,17vh)] sm:text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
                 <span className="inline-flex">
                   <span>ADARSH</span>
                   <span className="font-display italic font-normal normal-case ml-[0.05em]">

@@ -252,13 +252,14 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         },
       });
 
+      const isMobile = window.innerWidth < 768;
       // Scrubbed exit transition into dark canvas (0.72 -> 0.80)
       const exitTl = gsap.timeline({
         scrollTrigger: {
           trigger: scrollTriggerTrigger,
           start: "top top",
           end: "+=600%",
-          scrub: 1,
+          scrub: isMobile ? 0.35 : 1,
           invalidateOnRefresh: true,
         },
       });
@@ -499,7 +500,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                 }}
                 className="whitespace-nowrap"
               >
-                <span className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase whitespace-nowrap">
+                <span className="text-[clamp(8px,2.2vw,11px)] sm:text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase text-center sm:whitespace-nowrap break-words max-w-[92vw] inline-block">
                   {activeProject.technologies}
                 </span>
               </motion.div>
@@ -514,7 +515,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         ref={projectsHeadingRef}
         className="w-full pb-4 sm:pb-[2.5vh] md:pb-[3vh] px-4 text-center pointer-events-none select-none z-10 shrink-0"
       >
-        <h2 className="text-[clamp(3.5rem,13vw,16.5vh)] uppercase tracking-tight leading-none text-current whitespace-nowrap inline-flex items-baseline justify-center">
+        <h2 className="text-[clamp(2.3rem,12vw,16.5vh)] sm:text-[clamp(3.5rem,13vw,16.5vh)] uppercase tracking-tight leading-none text-current whitespace-nowrap inline-flex items-baseline justify-center">
           <span className="font-sans font-[450] inline-flex">
             <span className="blur-text-letter inline-block" style={{ willChange: "transform, filter, opacity" }}>P</span>
             <span className="blur-text-letter inline-block" style={{ willChange: "transform, filter, opacity" }}>R</span>
@@ -566,7 +567,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
           }`}
         >
           {/* Mobile 3-line balanced layout */}
-          <p className="block sm:hidden text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
+          <p className="block sm:hidden text-[clamp(9px,2.4vw,11px)] font-mono tracking-normal text-text-light/70 leading-snug uppercase px-2">
             A mix of creative and technical skills<br />
             I use to turn ideas into engaging visuals,<br />
             interactive experiences, and digital products.

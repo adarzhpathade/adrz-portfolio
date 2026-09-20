@@ -216,7 +216,8 @@ export default function ShaderGroupSwitcher(props: ShaderGroupSwitcherProps) {
         }
 
         const resize = () => {
-            const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
+            const isMobile = window.innerWidth < 768
+            const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : MAX_DPR)
             const w = Math.max(1, Math.round((canvas.clientWidth || 1) * dpr))
             const h = Math.max(1, Math.round((canvas.clientHeight || 1) * dpr))
             if (canvas.width !== w || canvas.height !== h) {
@@ -230,11 +231,21 @@ export default function ShaderGroupSwitcher(props: ShaderGroupSwitcherProps) {
         const ro = new ResizeObserver(resize)
         ro.observe(canvas)
 
+        let isVisible = true
+        const io = new IntersectionObserver((entries) => {
+            isVisible = entries[0]?.isIntersecting ?? true
+        }, { threshold: 0.01 })
+        io.observe(canvas)
+
         let raf = 0
         let last = 0
         let t = 0
         const frame = (now: number) => {
             raf = requestAnimationFrame(frame)
+            if (!isVisible) {
+                last = now
+                return
+            }
             const dt = last ? Math.min((now - last) / 1000, 1 / 15) : 0
             last = now
             const l = live.current
@@ -274,6 +285,7 @@ export default function ShaderGroupSwitcher(props: ShaderGroupSwitcherProps) {
         return () => {
             cancelAnimationFrame(raf)
             ro.disconnect()
+            io.disconnect()
         }
     }, [])
 
@@ -296,8 +308,8 @@ export default function ShaderGroupSwitcher(props: ShaderGroupSwitcherProps) {
             style={{
                 width: "100%",
                 height: "100%",
-                minWidth: 1200,
-                minHeight: 800,
+                minWidth: "100%",
+                minHeight: "100%",
                 position: "relative",
                 overflow: "hidden",
                 background,

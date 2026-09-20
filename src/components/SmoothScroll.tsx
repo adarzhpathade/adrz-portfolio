@@ -11,6 +11,7 @@ export default function SmoothScroll({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -18,9 +19,8 @@ export default function SmoothScroll({
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 1,
-      touchMultiplier: 1.2,
-      syncTouch: true,
-      syncTouchLerp: 0.075,
+      touchMultiplier: 1,
+      syncTouch: false,
     });
 
     if (typeof window !== "undefined") {

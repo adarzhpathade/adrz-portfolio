@@ -35,7 +35,7 @@ export default function GlobalNav({
 
     const getMetrics = () => {
       const isDesktop = window.innerWidth >= 768;
-      const targetScale = isDesktop ? 0.22 : 0.40;
+      const targetScale = isDesktop ? 0.22 : 0.32;
       const targetX = isDesktop ? 18 : 12;
       const targetY = isDesktop ? 12 : 12;
       const heroEl = document.getElementById("hero-main-title");
@@ -170,7 +170,7 @@ export default function GlobalNav({
         >
           <h1 
             ref={titleTextRef}
-            className="text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white"
+            className="text-[clamp(2.4rem,11.5vw,17vh)] sm:text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white"
           >
             <BlurText 
               text={[
@@ -186,10 +186,10 @@ export default function GlobalNav({
           </h1>
         </div>
 
-        {/* Right Navigation - Desktop shows DESIGN — FOLIO, (CONTACT), (ABOUT); Mobile shows ONLY (CONTACT) */}
+        {/* Right Navigation - Desktop shows DESIGN — FOLIO, (CONTACT), (ABOUT); Mobile shows (CONTACT), (ABOUT) */}
         <nav 
           ref={rightNavRef}
-          className="absolute top-0 right-4 md:right-6 pointer-events-auto flex items-center gap-6 md:gap-8 opacity-0 text-[#080808]"
+          className="absolute top-0 right-3 sm:right-4 md:right-6 pointer-events-auto flex items-center gap-4 sm:gap-6 md:gap-8 opacity-0 text-[#080808]"
           aria-label="Main Navigation"
         >
           <div className="hidden md:inline-block">

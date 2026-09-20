@@ -184,7 +184,7 @@ export default function Page2({
         {/* Bottom bio / description — 3 balanced lines on mobile, 2 lines on desktop */}
         <div className="absolute bottom-[3.5vh] left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto">
           {/* Mobile 3-line balanced block */}
-          <p className="block sm:hidden text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
+          <p className="block sm:hidden text-[clamp(9px,2.4vw,11px)] font-mono tracking-normal text-[#080808]/70 leading-snug uppercase px-2">
             A COLLECTION OF ORIGINAL MOTION GRAPHICS<br />
             AND VISUAL EXPERIMENTS, CRAFTED THROUGH<br />
             DESIGN, ANIMATION AND AFTER EFFECTS.

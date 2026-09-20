@@ -55,7 +55,7 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
             title="Send an email to Adarsh"
             className="group block w-full max-w-full text-center mt-3 sm:mt-5 cursor-pointer select-none transition-transform duration-300 hover:scale-[1.01]"
           >
-            <h1 className="font-sans text-[clamp(3.5rem,13vw,17vh)] font-[380] leading-[0.85] tracking-tighter uppercase whitespace-nowrap text-center text-white inline-flex items-baseline justify-center">
+            <h1 className="font-sans text-[clamp(2.2rem,11.5vw,17vh)] sm:text-[clamp(3.5rem,13vw,17vh)] font-[380] leading-[0.85] tracking-tighter uppercase whitespace-nowrap text-center text-white inline-flex items-baseline justify-center">
               <span className="mr-[0.2em]">LET’S</span>
               <span className="font-display italic font-normal mr-[0.14em]">C</span>
               <span>REATE.</span>
@@ -72,7 +72,7 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
                 label="ADARSHPATHADE79@GMAIL.COM"
                 staggerFrom="first"
                 reverse={false}
-                className="font-mono text-[clamp(10px,1.1vw,1.8vh)] tracking-wider uppercase cursor-pointer text-white"
+                className="font-mono text-[clamp(9px,2.6vw,12px)] sm:text-[clamp(10px,1.1vw,1.8vh)] tracking-wider uppercase cursor-pointer text-white"
               />
             </a>
           </div>
