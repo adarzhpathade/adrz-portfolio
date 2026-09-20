@@ -2,7 +2,7 @@
 
 A cinematic, scroll-driven portfolio built with **Next.js 16**, **Three.js**, **GSAP**, and **Framer Motion**. Mixing code, AI, motion, and visuals into one immersive digital experience.
 
-**[→ View Live](https://adrz-2026.vercel.app)**
+**[→ View Live](https://adrz-26.vercel.app)**
 
 ---
 
@@ -43,57 +43,11 @@ The site is a **4-page vertical scroll experience** with a cinematic preloader, 
 |-------|------------|
 | Framework | [Next.js 16](https://nextjs.org) (App Router, Turbopack) |
 | 3D / WebGL | [Three.js](https://threejs.org) via React Three Fiber, custom GLSL shaders |
-| Animation | [GSAP](https://gsap.com) + ScrollTrigger (scroll-linked), [Framer Motion](https://motion.dev) (spring physics) |
+| Animation | [GSAP](https://gsap.com) + ScrollTrigger, [Framer Motion](https://motion.dev) |
 | Smooth Scroll | [Lenis](https://lenis.darkroom.engineering) |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com) |
-| Typography | PP Neue Montreal, PP Eiko, Fragment Mono (self-hosted woff2) |
+| Typography | PP Neue Montreal, PP Eiko, Fragment Mono |
 | Deploy | [Vercel](https://vercel.com) |
-
----
-
-## Getting Started
-
-```bash
-# Clone
-git clone https://github.com/adarzhpathade/adrz-portfolio.git
-cd adrz-portfolio
-
-# Install
-npm install
-
-# Dev
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
----
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── components/          # Page-level components
-│   │   ├── Preloader.tsx    # Cinematic loader + GSAP exit morph
-│   │   ├── HeroSection.tsx  # Hero with shader, title, bio
-│   │   ├── Page2.tsx        # WebGL video carousel (motion work)
-│   │   ├── Page3.tsx        # 3D box carousel + skills
-│   │   ├── Page4.tsx        # Contact / footer
-│   │   ├── GlobalNav.tsx    # Fixed nav with scroll animations
-│   │   └── AboutCard.tsx    # 3D floating drawer
-│   ├── globals.css
-│   ├── layout.tsx           # Font loading, metadata
-│   └── page.tsx             # Scroll orchestrator
-├── components/              # Shared / reusable libraries
-│   ├── SmoothScroll.tsx
-│   ├── fancy/               # Text animations, box carousel
-│   ├── originkit/           # WebGL carousel, GLSL shader
-│   └── react-bits/          # BlurText, GradualBlur
-├── fonts/                   # Self-hosted woff2 fonts
-├── hooks/                   # useScreenSize
-└── lib/                     # Utilities
-```
 
 ---
 

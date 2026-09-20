@@ -45,7 +45,7 @@ const PROJECTS: ProjectData[] = [
     technologies: "NEXT.JS 16 / THREE.JS / GLSL / GSAP",
     src: "/images/adarsh-26.webp",
     alt: "Adarsh'26 Portfolio",
-    link: "https://adrz-2026.vercel.app/",
+    link: "https://adrz-26.vercel.app/",
   },
 ];
 
