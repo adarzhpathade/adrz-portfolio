@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -49,6 +49,30 @@ export default function Page2({
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const [entryTrigger, setEntryTrigger] = useState(0);
 
+  // Proportional dynamic dimensions for LiquidGlassCarousel across zoom levels
+  const [cardDimensions, setCardDimensions] = useState({ width: 240, height: 390 });
+
+  useEffect(() => {
+    const updateCardSize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (w < 640) {
+        setCardDimensions({ width: 190, height: 310 });
+      } else if (w < 768) {
+        setCardDimensions({ width: 220, height: 350 });
+      } else {
+        const aspect = 240 / 390;
+        let targetHeight = Math.round(Math.min(h * 0.44, (w * 0.28) / aspect));
+        targetHeight = Math.max(300, targetHeight);
+        const targetWidth = Math.round(targetHeight * aspect);
+        setCardDimensions({ width: targetWidth, height: targetHeight });
+      }
+    };
+    updateCardSize();
+    window.addEventListener("resize", updateCardSize);
+    return () => window.removeEventListener("resize", updateCardSize);
+  }, []);
+
   useGSAP(
     () => {
       const carouselWrapper = carouselWrapperRef.current;
@@ -65,10 +89,10 @@ export default function Page2({
       ScrollTrigger.create({
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=480%",
+        end: "+=600%",
         onUpdate: (self) => {
-          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 38%+)
-          if (self.progress >= 0.38) {
+          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 30%+)
+          if (self.progress >= 0.30 && self.progress < 0.50) {
             if (!hasEntered) {
               hasEntered = true;
               carouselWrapper.style.pointerEvents = "auto";
@@ -79,7 +103,7 @@ export default function Page2({
               });
               setEntryTrigger((prev) => prev + 1);
             }
-          } else if (self.progress < 0.26) {
+          } else if (self.progress < 0.20) {
             // User scrolled back up towards the Hero — hide and prepare for next entry
             if (hasEntered) {
               hasEntered = false;
@@ -90,6 +114,8 @@ export default function Page2({
                 overwrite: "auto",
               });
             }
+          } else if (self.progress >= 0.50) {
+            carouselWrapper.style.pointerEvents = "none";
           }
         },
       });
@@ -114,9 +140,9 @@ export default function Page2({
           <LiquidGlassCarousel
             items={PORTFOLIO_VIDEOS}
             background="#ECECEC"
-            cardWidth={240}
-            cardHeight={390}
-            gap={30}
+            cardWidth={cardDimensions.width}
+            cardHeight={cardDimensions.height}
+            gap={Math.round(cardDimensions.width * 0.125)}
             curved={true}
             cornerRadius={18}
             entryTrigger={entryTrigger}
@@ -156,16 +182,16 @@ export default function Page2({
         </div>
 
         {/* Bottom bio / description — 3 balanced lines on mobile, 2 lines on desktop */}
-        <div className="absolute bottom-8 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto">
+        <div className="absolute bottom-[3.5vh] left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto">
           {/* Mobile 3-line balanced block */}
-          <p className="block sm:hidden text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
+          <p className="block sm:hidden text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
             A COLLECTION OF ORIGINAL MOTION GRAPHICS<br />
             AND VISUAL EXPERIMENTS, CRAFTED THROUGH<br />
             DESIGN, ANIMATION AND AFTER EFFECTS.
           </p>
 
           {/* Tablet/Desktop 2-line layout */}
-          <p className="hidden sm:block text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
+          <p className="hidden sm:block text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
             A collection of original motion graphics and visual experiments,<br />
             crafted through design, animation and After Effects.
           </p>

@@ -19,9 +19,15 @@ const REVEAL_LINES = [
 
 interface HeroSectionProps {
   scrollTriggerTrigger?: string;
+  isAboutOpen?: boolean;
+  onToggleAbout?: () => void;
 }
 
-export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-container" }: HeroSectionProps) {
+export default function HeroSection({ 
+  scrollTriggerTrigger = "#main-scroll-container",
+  isAboutOpen = false,
+  onToggleAbout,
+}: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const rectangleRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
@@ -48,37 +54,35 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=480%", 
+        end: "+=600%", 
         scrub: 1,
         invalidateOnRefresh: true,
       },
     });
 
-    // --- PHASE 1: Hero Reveal (0.00 -> 0.21) ---
+    // --- PHASE 1: Hero Reveal (0.00 -> 0.16) ---
     // 1. Dark rectangle scrolls up and out (revealing the shader background)
     tl.to(rectangle, {
       yPercent: -100,
       ease: "none",
-      duration: 0.20,
+      duration: 0.16,
     }, 0);
 
     // 2. Center subtitle fades out quickly
     tl.to(centerText, {
       opacity: 0,
       ease: "power2.in",
-      duration: 0.09,
+      duration: 0.07,
     }, 0);
 
     // 3. Initial hero side links fade out quickly on scroll
     tl.to([about, contact], {
       opacity: 0,
-      duration: 0.04,
+      duration: 0.03,
       ease: "power2.in",
     }, 0);
 
     // 4. 3-line text words reveal with blur focus and subtle y translation
-    // Starts at 0.02, staggers across 0.08, duration 0.06 per word.
-    // By 0.16, EVERY word (including the entire last line) is 100% unblurred and sharp!
     const words = revealText.querySelectorAll<HTMLElement>(".reveal-word");
     tl.fromTo(
       words,
@@ -92,50 +96,49 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
         filter: "blur(0px)",
         y: 0,
         stagger: {
-          amount: 0.08,
+          amount: 0.06,
           ease: "power1.inOut",
         },
         ease: "power2.out",
-        duration: 0.06,
+        duration: 0.05,
       },
-      0.02
+      0.015
     );
 
-    // 5. Bottom "DESIGN — Folio" fades out promptly on scroll so it does not linger after rectangle moves
+    // 5. Bottom "DESIGN — Folio" fades out promptly on scroll
     tl.to(bottomHeading, {
       opacity: 0,
       filter: "blur(14px)",
       ease: "power1.out",
-      duration: 0.04,
+      duration: 0.03,
     }, 0);
 
-    // --- PHASE 1.5: Hold Hero Revealed State (0.16 -> 0.25) ---
-    // All 3 lines hold 100% crystal clear with zero blur while ReflectShader pulses
+    // --- PHASE 1.5: Hold Hero Revealed State (0.14 -> 0.20) ---
 
-    // --- PHASE 2: Transition to Page 2 (0.25 -> 0.42) ---
+    // --- PHASE 2: Transition to Page 2 (0.20 -> 0.34) ---
     // 6. 3-line text fades out and blurs upwards
     tl.to(revealText, {
       opacity: 0,
       filter: "blur(12px)",
       y: -30,
       ease: "power2.in",
-      duration: 0.07,
-    }, 0.25);
+      duration: 0.05,
+    }, 0.20);
 
-    // 6b. Hero main title fades out at 0.25 as GlobalNav smoothly scales the persistent logo into position
+    // 6b. Hero main title fades out at 0.20 as GlobalNav smoothly scales the persistent logo into position
     tl.to(heroTitle, {
       opacity: 0,
       ease: "power1.in",
-      duration: 0.03,
-    }, 0.25);
+      duration: 0.025,
+    }, 0.20);
 
     // 7. Hero section physically slides up and out of the viewport,
     // revealing the light-colored Page 2 sitting underneath
     tl.to(section, {
       yPercent: -100,
       ease: "power1.inOut",
-      duration: 0.17,
-    }, 0.25);
+      duration: 0.14,
+    }, 0.20);
 
     // Explicitly anchor timeline total duration to 1.0
     tl.set({}, {}, 1.0);
@@ -161,7 +164,7 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
         <div className="w-full relative flex flex-col items-center pt-4 md:pt-0">
           {/* Main Hero Heading — actively reacts with animated ReflectShader background via mix-blend-difference */}
           <div ref={heroTitleRef} id="hero-main-title" className="z-10 text-center flex items-center justify-center select-none pointer-events-auto">
-            <h1 className="text-6xl sm:text-8xl lg:text-[10rem] xl:text-[12rem] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
+            <h1 className="text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
               <BlurText 
                 text={[
                   { text: "ADARSH" },
@@ -185,19 +188,22 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
           >
             <div ref={aboutRef} className="pointer-events-auto">
               <LetterSwapPingPong
-                label="(About)"
+                label={isAboutOpen ? "(Close)" : "(About)"}
                 staggerFrom="first"
                 reverse={false}
-                className="font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer transition-opacity"
+                className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity"
+                onClick={onToggleAbout}
               />
             </div>
             <div ref={contactRef} className="pointer-events-auto">
-              <LetterSwapPingPong
-                label="(Contact)"
-                staggerFrom="first"
-                reverse={false}
-                className="font-mono text-[10px] sm:text-xs tracking-wider uppercase cursor-pointer transition-opacity"
-              />
+              <a href="mailto:adarshpathade79@gmail.com" className="inline-block text-current">
+                <LetterSwapPingPong
+                  label="(Contact)"
+                  staggerFrom="first"
+                  reverse={false}
+                  className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity"
+                />
+              </a>
             </div>
           </motion.div>
         </div>
@@ -209,16 +215,16 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
           >
-            <p className="text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
+            <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
               MIXING CODE, AI, MOTION, &amp; VISUALS
             </p>
           </motion.div>
         </div>
 
         {/* 3-Line Text — hidden by default, revealed on scroll, blurs out on transition to Page 2 */}
-        <div ref={revealTextRef} className="w-full text-center px-4 flex flex-col items-center justify-center z-20 absolute bottom-12 md:bottom-16 pointer-events-none">
+        <div ref={revealTextRef} className="w-full text-center px-4 flex flex-col items-center justify-center z-20 absolute bottom-[7vh] md:bottom-[8vh] pointer-events-none">
           {REVEAL_LINES.map((line, lineIndex) => (
-            <p key={lineIndex} className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-[450] tracking-wide uppercase text-white leading-[1.18] sm:leading-[1.2] flex flex-wrap justify-center gap-x-[0.35em] gap-y-0">
+            <p key={lineIndex} className="text-[clamp(1.1rem,2.4vw,3.6vh)] font-[450] tracking-wide uppercase text-white leading-[1.18] sm:leading-[1.2] flex flex-wrap justify-center gap-x-[0.35em] gap-y-0">
               {line.split(/\s+/).map((word, wordIndex) => (
                 <span 
                   key={`${lineIndex}-${wordIndex}`} 
@@ -239,7 +245,7 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
 
         {/* Bottom "DESIGN — Folio" text with React Bits BlurText reveal */}
         <div ref={bottomHeadingRef} className="w-full flex justify-center pointer-events-none select-none">
-          <h2 className="text-lg sm:text-2xl lg:text-[2rem] font-normal tracking-tight uppercase leading-none flex items-center justify-center">
+          <h2 className="text-[clamp(1.1rem,2vw,3vh)] font-normal tracking-tight uppercase leading-none flex items-center justify-center">
             <BlurText
               text={[
                 { text: "DESIGN — " },
@@ -260,9 +266,9 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6, duration: 0.8 }}
-        className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 w-full text-center z-10 pointer-events-none"
+        className="absolute bottom-[1.5vh] left-1/2 -translate-x-1/2 w-full text-center z-10 pointer-events-none"
       >
-        <p className="text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
+        <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
           Creative Technologist Based in India<br />
           Building Digital Experiences Through Code, AI &amp; Motion.
         </p>

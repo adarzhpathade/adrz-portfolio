@@ -110,18 +110,23 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
 
     const updateDimensions = () => {
       const w = window.innerWidth;
+      const h = window.innerHeight;
+
       if (w < 380) {
         setDimensions({ width: 250, height: 148 });
       } else if (w < 640) {
         setDimensions({ width: 280, height: 165 });
       } else if (w < 768) {
-        setDimensions({ width: 310, height: 180 });
-      } else if (w < 1024) {
-        setDimensions({ width: 380, height: 220 });
-      } else if (w < 1440) {
-        setDimensions({ width: 430, height: 250 });
+        setDimensions({ width: 320, height: 188 });
       } else {
-        setDimensions({ width: 470, height: 275 });
+        // Proportional dynamic scaling: locks the exact 100% scale ratio across all zoom levels and resolutions
+        const aspect = 470 / 275;
+        // Optimal height is ~31% of viewport height, bounded by horizontal width allocation
+        let targetHeight = Math.round(Math.min(h * 0.31, (w * 0.35) / aspect));
+        targetHeight = Math.max(230, targetHeight);
+        const targetWidth = Math.round(targetHeight * aspect);
+
+        setDimensions({ width: targetWidth, height: targetHeight });
       }
     };
 
@@ -166,14 +171,14 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
       let hasEntered = false;
       const skillsContainer = skillsContainerRef.current;
 
-      // Entrance choreography: 3D cube and info reveal when Page 3 arrives (progress 0.70)
+      // Entrance choreography: 3D cube and info reveal when Page 3 arrives (progress 0.58+)
       ScrollTrigger.create({
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=480%",
+        end: "+=600%",
         onUpdate: (self) => {
-          // Trigger when Page 3 is active in the viewport (progress >= 0.66)
-          if (self.progress >= 0.66 && self.progress < 0.90) {
+          // Trigger when Page 3 is active in the viewport (progress >= 0.58 and < 0.72)
+          if (self.progress >= 0.58 && self.progress < 0.72) {
             galleryWrapper.style.pointerEvents = "auto";
             if (!hasEntered) {
               hasEntered = true;
@@ -201,7 +206,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                 });
               }
             }
-          } else if (self.progress < 0.60) {
+          } else if (self.progress < 0.50) {
             // Reset when user scrolls back up toward Page 2
             if (hasEntered) {
               hasEntered = false;
@@ -227,31 +232,34 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                 });
               }
             }
-          } else if (self.progress >= 0.90) {
+          } else if (self.progress >= 0.72) {
             galleryWrapper.style.pointerEvents = "none";
           }
 
-          // Trigger BlurText for the 5 skills when dark canvas arrives (progress >= 0.92)
-          if (self.progress >= 0.92) {
+          // Trigger BlurText for the 5 skills ONLY after projects are 100% faded out (progress >= 0.83 and < 0.93)
+          if (self.progress >= 0.83 && self.progress < 0.93) {
             setSkillsInView((prev) => (!prev ? true : prev));
-          } else if (self.progress < 0.88) {
+          } else if (self.progress < 0.81) {
             setSkillsInView((prev) => (prev ? false : prev));
+          } else if (self.progress >= 0.93) {
+            // Disable pointer events during curtain reveal to Page 4
+            setSkillsInView(false);
           }
         },
       });
 
-      // Scrubbed exit transition into dark canvas (0.83 -> 0.98)
+      // Scrubbed exit transition into dark canvas (0.72 -> 0.80)
       const exitTl = gsap.timeline({
         scrollTrigger: {
           trigger: scrollTriggerTrigger,
           start: "top top",
-          end: "+=480%",
+          end: "+=600%",
           scrub: 1,
           invalidateOnRefresh: true,
         },
       });
 
-      // Bottom "PROJECTS" heading fades out with letter-by-letter React Bits BlurText effect
+      // Bottom "PROJECTS" heading fades out completely between 0.72 and 0.79
       const blurLetters = projectsHeading?.querySelectorAll(".blur-text-letter");
       if (blurLetters && blurLetters.length > 0) {
         exitTl.fromTo(
@@ -268,47 +276,47 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
             color: "#FFFFFF",
             y: -36,
             stagger: {
-              each: 0.008,
+              each: 0.006,
               from: "start",
               ease: "power1.inOut",
             },
-            ease: "power2.inOut",
-            duration: 0.11,
+            ease: "power2.in",
+            duration: 0.07,
           },
-          0.83
+          0.72
         );
       }
 
-      // Middle content (3D cube, left title, right tech info) wipes out simply through opacity
+      // Middle content (3D cube, left title, right tech info) wipes out cleanly by 0.79
       if (contentWrapper) {
         exitTl.fromTo(
           contentWrapper,
           { opacity: 1 },
           {
             opacity: 0,
-            ease: "power1.inOut",
-            duration: 0.12,
+            ease: "power1.in",
+            duration: 0.07,
           },
-          0.83
+          0.72
         );
-        exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.95);
+        exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.79);
       }
 
-      // Top statement wipes out simply through opacity
+      // Top statement wipes out cleanly by 0.78
       if (topStatement) {
         exitTl.fromTo(
           topStatement,
           { opacity: 1 },
           {
             opacity: 0,
-            ease: "power1.inOut",
-            duration: 0.12,
+            ease: "power1.in",
+            duration: 0.06,
           },
-          0.83
+          0.72
         );
       }
 
-      // Section background smoothly transitions from #ECECEC to dark (#080808)
+      // Section background smoothly transitions from #ECECEC to dark (#080808) by 0.80
       if (section) {
         exitTl.fromTo(
           section,
@@ -316,26 +324,28 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
           {
             backgroundColor: "#080808",
             ease: "power1.inOut",
-            duration: 0.15,
+            duration: 0.08,
           },
-          0.83
+          0.72
         );
       }
 
-      // 5 Skills Center Overlay fades in as the content fades out and background turns dark
+      // 5 Skills Center Overlay fades in ONLY at 0.82 (after previous elements are 100% invisible)
       if (skillsContainer) {
         exitTl.fromTo(
           skillsContainer,
-          { opacity: 0, y: 24 },
+          { opacity: 0, y: 20 },
           {
             opacity: 1,
             y: 0,
             ease: "power2.out",
-            duration: 0.06,
+            duration: 0.04,
           },
-          0.92
+          0.82
         );
-        exitTl.set(skillsContainer, { pointerEvents: "auto" }, 0.93);
+        exitTl.set(skillsContainer, { pointerEvents: "auto" }, 0.83);
+        // Curtain reveal starts at 0.93 — disable pointer events on skills container
+        exitTl.set(skillsContainer, { pointerEvents: "none" }, 0.93);
       }
 
       // Anchor timeline duration to 1.0
@@ -357,21 +367,21 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
       {/* Top Statement — positioned below header nav with clean editorial spacing */}
       <div 
         ref={topStatementRef}
-        className="w-full pt-20 sm:pt-14 md:pt-16 px-4 text-center z-40 pointer-events-auto shrink-0"
+        className="w-full pt-16 sm:pt-[4.5vh] md:pt-[5vh] px-4 text-center z-40 pointer-events-auto shrink-0"
       >
-        <p className="text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
+        <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
           I LOVE DESIGN, MOTION &amp; VIDEO<br />
           AND BRING IDEAS TO LIFE THROUGH VISUALS<br />
           /HERE&apos;S SOME OF MY WORK
         </p>
       </div>
 
-      {/* Middle Section — equidistant between top statement and bottom heading */}
+      {/* Middle Section — centered with constrained vertical span to prevent over-stretching */}
       <div 
         ref={contentWrapperRef}
-        className="relative z-20 w-full flex-1 flex flex-col items-center justify-center my-auto px-4 sm:px-6 md:px-10 lg:px-16 pointer-events-auto"
+        className="relative z-20 w-full flex-1 flex flex-col items-center justify-center my-auto px-4 sm:px-6 md:px-10 lg:px-16 pointer-events-auto max-h-[58vh]"
       >
-        <div className="w-full max-w-[1440px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+        <div className="w-full max-w-[1540px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
           
           {/* Left Column: Project Name (Single line, mix of normal & italic font with blur text effect) */}
           <div
@@ -420,7 +430,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                         reverse={false}
                         staggerFrom="first"
                         staggerDuration={0.02}
-                        className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl text-[#080808] uppercase tracking-tight whitespace-nowrap !flex-nowrap items-baseline cursor-pointer"
+                        className="text-[clamp(1.4rem,2.4vw,3.8vh)] text-[#080808] uppercase tracking-tight whitespace-nowrap !flex-nowrap items-baseline cursor-pointer"
                       />
                     </a>
                   ) : (
@@ -430,7 +440,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                       reverse={false}
                       staggerFrom="first"
                       staggerDuration={0.02}
-                      className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl text-[#080808] uppercase tracking-tight whitespace-nowrap !flex-nowrap items-baseline cursor-pointer"
+                      className="text-[clamp(1.4rem,2.4vw,3.8vh)] text-[#080808] uppercase tracking-tight whitespace-nowrap !flex-nowrap items-baseline cursor-pointer"
                     />
                   );
                 })()}
@@ -486,7 +496,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                 }}
                 className="whitespace-nowrap"
               >
-                <span className="text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase whitespace-nowrap">
+                <span className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase whitespace-nowrap">
                   {activeProject.technologies}
                 </span>
               </motion.div>
@@ -496,12 +506,12 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         </div>
       </div>
 
-      {/* Massive Project Heading at the bottom — mixed fonts (Neue Montreal sans with Eiko italic O) */}
+      {/* Massive Project Heading at the bottom — clamped so it remains in exact proportion to the 3D Box */}
       <div 
         ref={projectsHeadingRef}
-        className="w-full pb-6 sm:pb-6 md:pb-8 px-4 text-center pointer-events-none select-none z-10 shrink-0"
+        className="w-full pb-4 sm:pb-[2.5vh] md:pb-[3vh] px-4 text-center pointer-events-none select-none z-10 shrink-0"
       >
-        <h2 className="text-[15vw] sm:text-7xl md:text-[11vw] lg:text-[12.5vw] xl:text-[13.5vw] uppercase tracking-tight leading-none text-current whitespace-nowrap inline-flex items-baseline justify-center">
+        <h2 className="text-[clamp(3.5rem,13vw,16.5vh)] uppercase tracking-tight leading-none text-current whitespace-nowrap inline-flex items-baseline justify-center">
           <span className="font-sans font-[450] inline-flex">
             <span className="blur-text-letter inline-block" style={{ willChange: "transform, filter, opacity" }}>P</span>
             <span className="blur-text-letter inline-block" style={{ willChange: "transform, filter, opacity" }}>R</span>
@@ -526,7 +536,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         }`}
       >
         <div
-          className={`flex flex-col items-center justify-center gap-2.5 sm:gap-3 md:gap-4 px-4 w-full max-w-5xl text-center ${
+          className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 md:gap-2 px-4 w-full max-w-5xl text-center ${
             skillsInView ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
@@ -542,7 +552,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                 staggerDuration={0.02}
                 trigger={skillsInView}
                 initialDelay={index * 0.08}
-                className="font-sans font-[450] text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight cursor-pointer py-0.5 hover:text-white/95 transition-colors"
+                className="font-sans font-[450] text-[clamp(1.85rem,4vw,5.8vh)] leading-none text-white uppercase tracking-tight cursor-pointer py-0.5 hover:text-white/95 transition-colors"
               />
             </div>
           ))}
@@ -550,19 +560,19 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
 
         {/* Bottom description in the same style as Page 2 and Hero bottom text */}
         <div
-          className={`absolute bottom-8 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 ${
+          className={`absolute bottom-[3.5vh] left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 ${
             skillsInView ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
           {/* Mobile 3-line balanced layout */}
-          <p className="block sm:hidden text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
+          <p className="block sm:hidden text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
             A mix of creative and technical skills<br />
             I use to turn ideas into engaging visuals,<br />
             interactive experiences, and digital products.
           </p>
 
           {/* Tablet/Desktop 2-line layout */}
-          <p className="hidden sm:block text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
+          <p className="hidden sm:block text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
             A mix of creative and technical skills I use to turn ideas into<br />
             engaging visuals, interactive experiences, and digital products.
           </p>

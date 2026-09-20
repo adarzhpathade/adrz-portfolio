@@ -11,9 +11,15 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 interface GlobalNavProps {
   scrollTriggerTrigger?: string;
+  isAboutOpen?: boolean;
+  onToggleAbout?: () => void;
 }
 
-export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-container" }: GlobalNavProps) {
+export default function GlobalNav({ 
+  scrollTriggerTrigger = "#main-scroll-container",
+  isAboutOpen = false,
+  onToggleAbout,
+}: GlobalNavProps) {
   const navContainerRef = useRef<HTMLElement>(null);
   const titleWrapperRef = useRef<HTMLDivElement>(null);
   const titleTextRef = useRef<HTMLHeadingElement>(null);
@@ -60,14 +66,14 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=480%",
+        end: "+=600%",
         scrub: 1,
         invalidateOnRefresh: true,
       },
     });
 
-    // 0.00 -> 0.25: Title is rendered directly in HeroSection with mix-blend-difference over WebGL background
-    // 0.25 -> 0.42: Transition to Page 2
+    // 0.00 -> 0.20: Title is rendered directly in HeroSection with mix-blend-difference over WebGL background
+    // 0.20 -> 0.34: Transition to Page 2
     // Title fades in at heroX, heroY and smoothly scales down into top-left logo on Page 2
     tl.fromTo(
       titleWrapper,
@@ -84,9 +90,9 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
         scale: () => getMetrics().targetScale,
         opacity: 1,
         ease: "power1.inOut",
-        duration: 0.17,
+        duration: 0.14,
       },
-      0.25
+      0.20
     );
 
     // Title color transitions smoothly to deep black (#080808) for Page 2 & Page 3
@@ -95,9 +101,9 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
       {
         color: "#080808",
         ease: "power1.inOut",
-        duration: 0.17,
+        duration: 0.14,
       },
-      0.25
+      0.20
     );
 
     // Right nav links fade and slide in to the exact inline centerline of the title
@@ -111,22 +117,22 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
         opacity: 1,
         y: () => getMetrics().rightNavY,
         ease: "power2.out",
-        duration: 0.12,
+        duration: 0.10,
       },
-      0.30
+      0.24
     );
 
-    // 0.83 -> 0.98: Transition to Dark Section
-    // Nav remains in its exact pinned position ("nav will be as it is"),
-    // but typography smoothly transitions back to pure white (#FFFFFF) for crisp legibility on dark background
+    // 0.72 -> 0.80: Transition to Dark Section
+    // Nav remains in its exact pinned position,
+    // typography smoothly transitions back to pure white (#FFFFFF) for dark background & Page 4
     tl.to(
       titleText,
       {
         color: "#FFFFFF",
         ease: "power1.inOut",
-        duration: 0.15,
+        duration: 0.08,
       },
-      0.83
+      0.72
     );
 
     tl.to(
@@ -134,9 +140,9 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
       {
         color: "#FFFFFF",
         ease: "power1.inOut",
-        duration: 0.15,
+        duration: 0.08,
       },
-      0.83
+      0.72
     );
 
     // Explicitly anchor timeline total duration to 1.0 so nav remains pinned in position
@@ -164,7 +170,7 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
         >
           <h1 
             ref={titleTextRef}
-            className="text-6xl sm:text-8xl lg:text-[10rem] xl:text-[12rem] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white"
+            className="text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white"
           >
             <BlurText 
               text={[
@@ -181,7 +187,6 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
         </div>
 
         {/* Right Navigation - Desktop shows DESIGN — FOLIO, (CONTACT), (ABOUT); Mobile shows ONLY (CONTACT) */}
-        {/* top-0 allows GSAP to dynamically center its Y position inline with the title */}
         <nav 
           ref={rightNavRef}
           className="absolute top-0 right-4 md:right-6 pointer-events-auto flex items-center gap-6 md:gap-8 opacity-0 text-[#080808]"
@@ -192,31 +197,26 @@ export default function GlobalNav({ scrollTriggerTrigger = "#main-scroll-contain
               label="DESIGN — FOLIO"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[13px] sm:text-xs md:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-current"
+              className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
             />
           </div>
           <div className="inline-block">
-            <LetterSwapPingPong
-              label="(Contact)"
-              staggerFrom="first"
-              reverse={false}
-              className="font-mono text-[13px] sm:text-xs md:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-current"
-              onClick={() => {
-                const contactEl = document.getElementById("contact");
-                if (contactEl) contactEl.scrollIntoView({ behavior: "smooth" });
-              }}
-            />
+            <a href="mailto:adarshpathade79@gmail.com" className="inline-block text-current">
+              <LetterSwapPingPong
+                label="(Contact)"
+                staggerFrom="first"
+                reverse={false}
+                className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
+              />
+            </a>
           </div>
-          <div className="hidden md:inline-block">
+          <div className="inline-block">
             <LetterSwapPingPong
-              label="(About)"
+              label={isAboutOpen ? "(Close)" : "(About)"}
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[13px] sm:text-xs md:text-xs tracking-wider uppercase cursor-pointer transition-opacity text-current"
-              onClick={() => {
-                const aboutEl = document.getElementById("about");
-                if (aboutEl) aboutEl.scrollIntoView({ behavior: "smooth" });
-              }}
+              className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
+              onClick={onToggleAbout}
             />
           </div>
         </nav>
