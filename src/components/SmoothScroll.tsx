@@ -21,6 +21,10 @@ export default function SmoothScroll({
       touchMultiplier: 2,
     });
 
+    if (typeof window !== "undefined") {
+      (window as any).__lenis = lenis;
+    }
+
     lenis.on("scroll", ScrollTrigger.update);
 
     const updateRaf = (time: number) => {
@@ -31,6 +35,9 @@ export default function SmoothScroll({
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      if (typeof window !== "undefined") {
+        delete (window as any).__lenis;
+      }
       gsap.ticker.remove(updateRaf);
       lenis.destroy();
     };

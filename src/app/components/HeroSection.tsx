@@ -21,12 +21,14 @@ interface HeroSectionProps {
   scrollTriggerTrigger?: string;
   isAboutOpen?: boolean;
   onToggleAbout?: () => void;
+  isReady?: boolean;
 }
 
 export default function HeroSection({ 
   scrollTriggerTrigger = "#main-scroll-container",
   isAboutOpen = false,
   onToggleAbout,
+  isReady = true,
 }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const rectangleRef = useRef<HTMLDivElement>(null);
@@ -165,25 +167,20 @@ export default function HeroSection({
           {/* Main Hero Heading — actively reacts with animated ReflectShader background via mix-blend-difference */}
           <div ref={heroTitleRef} id="hero-main-title" className="z-10 text-center flex items-center justify-center select-none pointer-events-auto">
             <h1 className="text-[clamp(3.5rem,12vw,17vh)] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
-              <BlurText 
-                text={[
-                  { text: "ADARSH" },
-                  { text: "'26", className: "font-display italic font-normal normal-case" }
-                ]} 
-                delay={30}
-                stepDuration={0.25}
-                animateBy="letters" 
-                direction="top" 
-                className="inline-flex" 
-              />
+              <span className="inline-flex">
+                <span>ADARSH</span>
+                <span className="font-display italic font-normal normal-case ml-[0.05em]">
+                  &apos;26
+                </span>
+              </span>
             </h1>
           </div>
           
           {/* Initial Hero links: (About) & (Contact) — visible on load, fade out on scroll */}
           <motion.div 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
+            animate={{ opacity: isReady ? 1 : 0 }}
+            transition={{ delay: 0.15, duration: 0.7 }}
             className="flex items-center gap-8 mt-4 md:mt-0 md:absolute md:inset-0 md:w-full md:px-8 lg:px-16 md:justify-between pointer-events-none z-20"
           >
             <div ref={aboutRef} className="pointer-events-auto">
@@ -209,11 +206,11 @@ export default function HeroSection({
         </div>
 
         {/* Center Text — visible on load, fades out on scroll */}
-        <div ref={centerTextRef} className="w-full text-center px-4 md:absolute md:top-[55%] md:-translate-y-1/2 z-10">
+        <div ref={centerTextRef} className="w-full text-center px-4 absolute top-[55%] -translate-y-1/2 z-10">
           <motion.div 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
+            animate={{ opacity: isReady ? 1 : 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
           >
             <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
               MIXING CODE, AI, MOTION, &amp; VISUALS
@@ -243,29 +240,26 @@ export default function HeroSection({
           ))}
         </div>
 
-        {/* Bottom "DESIGN — Folio" text with React Bits BlurText reveal */}
+        {/* Bottom "DESIGN — Folio" text */}
         <div ref={bottomHeadingRef} className="w-full flex justify-center pointer-events-none select-none">
-          <h2 className="text-[clamp(1.1rem,2vw,3vh)] font-normal tracking-tight uppercase leading-none flex items-center justify-center">
-            <BlurText
-              text={[
-                { text: "DESIGN — " },
-                { text: "Folio", className: "font-display italic font-normal normal-case ml-2" },
-              ]}
-              delay={35}
-              stepDuration={0.25}
-              animateBy="letters"
-              direction="top"
-              className="inline-flex items-center justify-center !flex-nowrap"
-            />
-          </h2>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isReady ? 1 : 0 }}
+            transition={{ delay: 0.25, duration: 0.7 }}
+          >
+            <h2 className="text-[clamp(1.1rem,2vw,3vh)] font-normal tracking-tight uppercase leading-none flex items-center justify-center">
+              <span>DESIGN — </span>
+              <span className="font-display italic font-normal normal-case ml-2">Folio</span>
+            </h2>
+          </motion.div>
         </div>
       </div>
 
       {/* Bottom bio in Hero — visible on load */}
       <motion.div 
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6, duration: 0.8 }}
+        animate={{ opacity: isReady ? 1 : 0 }}
+        transition={{ delay: 0.3, duration: 0.7 }}
         className="absolute bottom-[1.5vh] left-1/2 -translate-x-1/2 w-full text-center z-10 pointer-events-none"
       >
         <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal text-text-light/70 leading-tight uppercase">

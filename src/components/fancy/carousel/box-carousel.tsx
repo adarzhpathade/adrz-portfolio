@@ -87,7 +87,7 @@ const CubeFace = memo(
   }: FaceProps & { isDragging?: boolean; enableDrag?: boolean }) => (
     <div
       className={cn(
-        "absolute overflow-hidden select-none",
+        "absolute overflow-hidden select-none [backface-visibility:hidden]",
         enableDrag && (isDragging ? "cursor-grabbing" : "cursor-grab"),
         debug && "backface-visible opacity-50",
         className
@@ -304,113 +304,59 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
 
     const _transition = prefersReducedMotion ? { duration: 0 } : transition;
 
-    // 0 ⇢ will be shown if the user presses "prev"
-    const [prevIndex, setPrevIndex] = useState(items.length - 1);
-
-    // 1 ⇢ item that is currently visible
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    // 2 ⇢ will be shown on the next "next"
-    const [nextIndex, setNextIndex] = useState(1);
-
-    // 3 ⇢ two steps ahead (the face that is at the back right now)
-    const [afterNextIndex, setAfterNextIndex] = useState(2);
-
     const [currentRotation, setCurrentRotation] = useState(0);
 
-    const rotationCount = useRef(1);
     const isRotating = useRef(false);
-    const pendingIndexChange = useRef<number | null>(null);
     const isDragging = useRef(false);
     const startPosition = useRef({ x: 0, y: 0 });
     const startRotation = useRef(0);
+    const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const baseRotateX = useMotionValue(0);
     const baseRotateY = useMotionValue(0);
 
-    // Use springs for smoother animation during drag
-    const springRotateX = useSpring(baseRotateX, dragSpring);
-    const springRotateY = useSpring(baseRotateY, dragSpring);
+    // Stop rotation and release lock unconditionally
+    const releaseLock = useCallback(() => {
+      isRotating.current = false;
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
+    }, []);
 
-    const handleAnimationComplete = useCallback(
-      (triggeredBy: string) => {
-        if (isRotating.current && pendingIndexChange.current !== null) {
-          isRotating.current = false;
-
-          let newFrontFaceIndex: number;
-          let currentBackFaceIndex: number;
-
-          if (triggeredBy === "next") {
-            newFrontFaceIndex = (currentFrontFaceIndex + 1) % 4;
-            currentBackFaceIndex = (newFrontFaceIndex + 2) % 4;
-          } else {
-            newFrontFaceIndex = (currentFrontFaceIndex - 1 + 4) % 4;
-            currentBackFaceIndex = (newFrontFaceIndex + 3) % 4;
-          }
-
-          setCurrentItemIndex(pendingIndexChange.current);
-          onIndexChange?.(pendingIndexChange.current);
-
-          const indexOffset = triggeredBy === "next" ? 2 : -1;
-
-          if (currentBackFaceIndex === 0) {
-            setPrevIndex(
-              (pendingIndexChange.current + indexOffset + items.length) %
-                items.length
-            );
-          } else if (currentBackFaceIndex === 1) {
-            setCurrentIndex(
-              (pendingIndexChange.current + indexOffset + items.length) %
-                items.length
-            );
-          } else if (currentBackFaceIndex === 2) {
-            setNextIndex(
-              (pendingIndexChange.current + indexOffset + items.length) %
-                items.length
-            );
-          } else if (currentBackFaceIndex === 3) {
-            setAfterNextIndex(
-              (pendingIndexChange.current + indexOffset + items.length) %
-                items.length
-            );
-          }
-
-          pendingIndexChange.current = null;
-          rotationCount.current++;
-
-          setCurrentFrontFaceIndex(newFrontFaceIndex);
-        }
-      },
-      [currentFrontFaceIndex, items.length, onIndexChange]
-    );
-
-    // Drag functionality - using direct event handlers like css-box
+    // Drag functionality - robust touch and mouse handling
     const handleDragStart = useCallback(
       (e: React.MouseEvent | React.TouchEvent) => {
-        if (!enableDrag || isRotating.current) return;
+        if (!enableDrag) return;
+
+        // Immediately stop active animations so user has tactile instant control
+        baseRotateX.stop();
+        baseRotateY.stop();
+        releaseLock();
 
         isDragging.current = true;
         setIsDraggingState(true);
         const point = "touches" in e ? e.touches[0] : e;
         startPosition.current = { x: point.clientX, y: point.clientY };
-        startRotation.current = currentRotation;
+        const isVertical = direction === "top" || direction === "bottom";
+        startRotation.current = isVertical ? baseRotateX.get() : baseRotateY.get();
 
         if (typeof document !== "undefined") {
           document.body.style.cursor = "grabbing";
           document.body.style.userSelect = "none";
         }
 
-        // Prevent default to avoid text selection / native image drag
+        // Prevent native image dragging / unwanted text selection
         if ("cancelable" in e && e.cancelable) {
           e.preventDefault();
         }
       },
-      [enableDrag, currentRotation]
+      [enableDrag, direction, baseRotateX, baseRotateY, releaseLock]
     );
 
     const handleDragMove = useCallback(
       (e: MouseEvent | TouchEvent) => {
-        if (!isDragging.current || isRotating.current) return;
+        if (!isDragging.current) return;
 
         const point = "touches" in e ? e.touches[0] : e;
         const deltaX = point.clientX - startPosition.current.x;
@@ -428,12 +374,11 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
           newRotation -= rotationDelta;
         }
 
-        // Constrain rotation to ±120 degrees from start position
+        // Constrain rotation to ±120 degrees from drag start
         const minRotation = startRotation.current - 120;
         const maxRotation = startRotation.current + 120;
         newRotation = Math.max(minRotation, Math.min(maxRotation, newRotation));
 
-        // Apply the rotation immediately during drag
         if (isVertical) {
           baseRotateX.set(newRotation);
         } else {
@@ -455,168 +400,125 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
       }
 
       const isVertical = direction === "top" || direction === "bottom";
-      const currentValue = isVertical ? baseRotateX.get() : baseRotateY.get();
+      const targetMotionValue = isVertical ? baseRotateX : baseRotateY;
+      const currentValue = targetMotionValue.get();
 
-      // Calculate the nearest quarter rotation (90-degree increment)
+      // Calculate nearest 90-degree step
       const quarterRotations = Math.round(currentValue / 90);
       const snappedRotation = quarterRotations * 90;
 
-      // Calculate how many steps we've moved from the original position
-      const rotationDifference = snappedRotation - currentRotation;
-      const steps = Math.round(rotationDifference / 90);
+      isRotating.current = true;
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = setTimeout(releaseLock, 1200);
 
-      if (steps !== 0) {
-        isRotating.current = true;
-
-        // Calculate new item index
-        let newItemIndex = currentItemIndex;
-        for (let i = 0; i < Math.abs(steps); i++) {
-          if (steps > 0) {
-            newItemIndex = (newItemIndex + 1) % items.length;
-          } else {
-            newItemIndex =
-              newItemIndex === 0 ? items.length - 1 : newItemIndex - 1;
-          }
-        }
-
-        pendingIndexChange.current = newItemIndex;
-
-        // Animate to the snapped position
-        const targetMotionValue = isVertical ? baseRotateX : baseRotateY;
-        animate(targetMotionValue, snappedRotation, {
-          ...snapTransition,
-          onComplete: () => {
-            handleAnimationComplete(steps > 0 ? "next" : "prev");
-            setCurrentRotation(snappedRotation);
-          },
-        });
-      } else {
-        // Snap back to current position
-        const targetMotionValue = isVertical ? baseRotateX : baseRotateY;
-        animate(targetMotionValue, currentRotation, snapTransition);
-      }
+      animate(targetMotionValue, snappedRotation, {
+        ...snapTransition,
+        onComplete: () => {
+          releaseLock();
+          setCurrentRotation(snappedRotation);
+          const normalizedTurn = ((quarterRotations % items.length) + items.length) % items.length;
+          setCurrentItemIndex(normalizedTurn);
+          onIndexChange?.(normalizedTurn);
+        },
+      });
     }, [
       direction,
       baseRotateX,
       baseRotateY,
-      currentRotation,
-      currentItemIndex,
       items.length,
       snapTransition,
-      handleAnimationComplete,
+      onIndexChange,
+      releaseLock,
     ]);
 
-    // Cleanup global cursor styles on unmount
+    // Stable global window listeners for drag
+    const handleDragMoveRef = useRef(handleDragMove);
+    const handleDragEndRef = useRef(handleDragEnd);
+    handleDragMoveRef.current = handleDragMove;
+    handleDragEndRef.current = handleDragEnd;
+
     useEffect(() => {
+      if (!enableDrag) return;
+
+      const onMove = (e: MouseEvent | TouchEvent) => handleDragMoveRef.current(e);
+      const onEnd = () => handleDragEndRef.current();
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onEnd);
+      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchend", onEnd);
+
       return () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onEnd);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onEnd);
         if (typeof document !== "undefined") {
           document.body.style.cursor = "";
           document.body.style.userSelect = "";
         }
       };
-    }, []);
-
-    // Set up global event listeners for drag
-    useEffect(() => {
-      if (enableDrag) {
-        window.addEventListener("mousemove", handleDragMove);
-        window.addEventListener("mouseup", handleDragEnd);
-        window.addEventListener("touchmove", handleDragMove);
-        window.addEventListener("touchend", handleDragEnd);
-
-        return () => {
-          window.removeEventListener("mousemove", handleDragMove);
-          window.removeEventListener("mouseup", handleDragEnd);
-          window.removeEventListener("touchmove", handleDragMove);
-          window.removeEventListener("touchend", handleDragEnd);
-        };
-      }
-    }, [enableDrag, handleDragMove, handleDragEnd]);
+    }, [enableDrag]);
 
     const next = useCallback(() => {
-      if (items.length === 0 || isRotating.current) return;
+      if (items.length === 0 || isDragging.current) return;
+
+      const isVertical = direction === "top" || direction === "bottom";
+      const targetMotionValue = isVertical ? baseRotateX : baseRotateY;
+      targetMotionValue.stop();
+
+      const currentVal = targetMotionValue.get();
+      const currentQuarter = Math.round(currentVal / 90);
+      const targetRotation =
+        (currentQuarter + (direction === "top" || direction === "right" ? 1 : -1)) * 90;
 
       isRotating.current = true;
-      const newIndex = (currentItemIndex + 1) % items.length;
-      pendingIndexChange.current = newIndex;
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = setTimeout(releaseLock, 1400);
 
-      if (direction === "top") {
-        animate(baseRotateX, currentRotation + 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("next");
-            setCurrentRotation(currentRotation + 90);
-          },
-        });
-      } else if (direction === "bottom") {
-        animate(baseRotateX, currentRotation - 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("next");
-            setCurrentRotation(currentRotation - 90);
-          },
-        });
-      } else if (direction === "left") {
-        animate(baseRotateY, currentRotation - 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("next");
-            setCurrentRotation(currentRotation - 90);
-          },
-        });
-      } else if (direction === "right") {
-        animate(baseRotateY, currentRotation + 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("next");
-            setCurrentRotation(currentRotation + 90);
-          },
-        });
-      }
-    }, [items.length, direction, _transition, currentRotation, currentItemIndex, baseRotateX, baseRotateY, handleAnimationComplete]);
+      animate(targetMotionValue, targetRotation, {
+        ..._transition,
+        onComplete: () => {
+          releaseLock();
+          setCurrentRotation(targetRotation);
+          const quarterRotations = Math.round(targetRotation / 90);
+          const normalizedTurn =
+            ((quarterRotations % items.length) + items.length) % items.length;
+          setCurrentItemIndex(normalizedTurn);
+          onIndexChange?.(normalizedTurn);
+        },
+      });
+    }, [items.length, direction, _transition, baseRotateX, baseRotateY, onIndexChange, releaseLock]);
 
     const prev = useCallback(() => {
-      if (items.length === 0 || isRotating.current) return;
+      if (items.length === 0 || isDragging.current) return;
+
+      const isVertical = direction === "top" || direction === "bottom";
+      const targetMotionValue = isVertical ? baseRotateX : baseRotateY;
+      targetMotionValue.stop();
+
+      const currentVal = targetMotionValue.get();
+      const currentQuarter = Math.round(currentVal / 90);
+      const targetRotation =
+        (currentQuarter - (direction === "top" || direction === "right" ? 1 : -1)) * 90;
 
       isRotating.current = true;
-      const newIndex =
-        currentItemIndex === 0 ? items.length - 1 : currentItemIndex - 1;
-      pendingIndexChange.current = newIndex;
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = setTimeout(releaseLock, 1400);
 
-      if (direction === "top") {
-        animate(baseRotateX, currentRotation - 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("prev");
-            setCurrentRotation(currentRotation - 90);
-          },
-        });
-      } else if (direction === "bottom") {
-        animate(baseRotateX, currentRotation + 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("prev");
-            setCurrentRotation(currentRotation + 90);
-          },
-        });
-      } else if (direction === "left") {
-        animate(baseRotateY, currentRotation + 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("prev");
-            setCurrentRotation(currentRotation + 90);
-          },
-        });
-      } else if (direction === "right") {
-        animate(baseRotateY, currentRotation - 90, {
-          ..._transition,
-          onComplete: () => {
-            handleAnimationComplete("prev");
-            setCurrentRotation(currentRotation - 90);
-          },
-        });
-      }
-    }, [items.length, direction, _transition, currentRotation, currentItemIndex, baseRotateX, baseRotateY, handleAnimationComplete]);
+      animate(targetMotionValue, targetRotation, {
+        ..._transition,
+        onComplete: () => {
+          releaseLock();
+          setCurrentRotation(targetRotation);
+          const quarterRotations = Math.round(targetRotation / 90);
+          const normalizedTurn =
+            ((quarterRotations % items.length) + items.length) % items.length;
+          setCurrentItemIndex(normalizedTurn);
+          onIndexChange?.(normalizedTurn);
+        },
+      });
+    }, [items.length, direction, _transition, baseRotateX, baseRotateY, onIndexChange, releaseLock]);
 
     useImperativeHandle(
       ref,
@@ -759,7 +661,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
             transform: transform,
           }}
         >
-          {/* First face */}
+          {/* First face (Left) */}
           <CubeFace
             transform={faceTransforms[0]}
             style={
@@ -771,10 +673,12 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
             isDragging={isDraggingState}
             enableDrag={enableDrag}
           >
-            <MediaRenderer item={items[prevIndex]} debug={debug} />
+            {items[3 % items.length] && (
+              <MediaRenderer item={items[3 % items.length]} debug={debug} />
+            )}
           </CubeFace>
 
-          {/* Second face */}
+          {/* Second face (Front) */}
           <CubeFace
             transform={faceTransforms[1]}
             style={
@@ -786,10 +690,12 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
             isDragging={isDraggingState}
             enableDrag={enableDrag}
           >
-            <MediaRenderer item={items[currentIndex]} debug={debug} />
+            {items[0] && (
+              <MediaRenderer item={items[0]} debug={debug} />
+            )}
           </CubeFace>
 
-          {/* Third face */}
+          {/* Third face (Right) */}
           <CubeFace
             transform={faceTransforms[2]}
             style={
@@ -801,10 +707,12 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
             isDragging={isDraggingState}
             enableDrag={enableDrag}
           >
-            <MediaRenderer item={items[nextIndex]} debug={debug} />
+            {items[1 % items.length] && (
+              <MediaRenderer item={items[1 % items.length]} debug={debug} />
+            )}
           </CubeFace>
 
-          {/* Fourth face */}
+          {/* Fourth face (Back) */}
           <CubeFace
             transform={faceTransforms[3]}
             style={
@@ -816,7 +724,9 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
             isDragging={isDraggingState}
             enableDrag={enableDrag}
           >
-            <MediaRenderer item={items[afterNextIndex]} debug={debug} />
+            {items[2 % items.length] && (
+              <MediaRenderer item={items[2 % items.length]} debug={debug} />
+            )}
           </CubeFace>
         </motion.div>
       </div>

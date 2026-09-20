@@ -17,27 +17,27 @@ interface Page2Props {
 
 const PORTFOLIO_VIDEOS = [
   {
-    image: "/videos/Advance Animations.webm",
+    image: "/videos/advance-animations.webm",
     title: "Advance Animations",
   },
   {
-    image: "/videos/Coffee Cup.webm",
+    image: "/videos/coffee-cup.webm",
     title: "Coffee Cup",
   },
   {
-    image: "/videos/Human Brain.webm",
+    image: "/videos/human-brain.webm",
     title: "Human Brain",
   },
   {
-    image: "/videos/Object Centric Animation - 2.webm",
+    image: "/videos/object-centric-animation-2.webm",
     title: "Object Centric Animation",
   },
   {
-    image: "/videos/Text Centric Animation - 1.webm",
+    image: "/videos/text-centric-animation-1.webm",
     title: "Text Centric Animation",
   },
   {
-    image: "/videos/What You See -.webm",
+    image: "/videos/what-you-see.webm",
     title: "What You See",
   },
 ];
@@ -91,11 +91,11 @@ export default function Page2({
         start: "top top",
         end: "+=600%",
         onUpdate: (self) => {
-          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 30%+)
-          if (self.progress >= 0.30 && self.progress < 0.50) {
+          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 28%+)
+          if (self.progress >= 0.28 && self.progress < 0.50) {
+            carouselWrapper.style.pointerEvents = "auto";
             if (!hasEntered) {
               hasEntered = true;
-              carouselWrapper.style.pointerEvents = "auto";
               gsap.to(carouselWrapper, {
                 opacity: 1,
                 duration: 0.35,

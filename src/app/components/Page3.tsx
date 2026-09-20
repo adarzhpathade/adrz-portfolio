@@ -34,7 +34,7 @@ const PROJECTS: ProjectData[] = [
     normalText: "SENTINEL",
     italicText: "",
     technologies: "NEXT.JS 16 / TYPESCRIPT / TAILWIND / AI SDK",
-    src: "/images/sentinel-terminal-v2.png",
+    src: "/images/sentinel-terminal.webp",
     alt: "Sentinel",
     link: "https://sentinel-magnm.vercel.app/",
   },
@@ -43,7 +43,7 @@ const PROJECTS: ProjectData[] = [
     normalText: "ADARSH",
     italicText: "'26",
     technologies: "NEXT.JS 16 / THREE.JS / GLSL / GSAP",
-    src: "/images/adarsh-26-v4.png",
+    src: "/images/adarsh-26.webp",
     alt: "Adarsh'26 Portfolio",
     link: "https://adrz-2026.vercel.app/",
   },
@@ -180,6 +180,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
           // Trigger when Page 3 is active in the viewport (progress >= 0.58 and < 0.72)
           if (self.progress >= 0.58 && self.progress < 0.72) {
             galleryWrapper.style.pointerEvents = "auto";
+            if (contentWrapper) contentWrapper.style.pointerEvents = "auto";
+            if (skillsContainer) skillsContainer.style.pointerEvents = "none";
             if (!hasEntered) {
               hasEntered = true;
               gsap.to(galleryWrapper, {
@@ -211,6 +213,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
             if (hasEntered) {
               hasEntered = false;
               galleryWrapper.style.pointerEvents = "none";
+              if (contentWrapper) contentWrapper.style.pointerEvents = "none";
               gsap.to(galleryWrapper, {
                 y: 140,
                 rotateX: 22,
@@ -234,6 +237,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
             }
           } else if (self.progress >= 0.72) {
             galleryWrapper.style.pointerEvents = "none";
+            if (contentWrapper) contentWrapper.style.pointerEvents = "none";
           }
 
           // Trigger BlurText for the 5 skills ONLY after projects are 100% faded out (progress >= 0.83 and < 0.93)
@@ -379,7 +383,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
       {/* Middle Section — centered with constrained vertical span to prevent over-stretching */}
       <div 
         ref={contentWrapperRef}
-        className="relative z-20 w-full flex-1 flex flex-col items-center justify-center my-auto px-4 sm:px-6 md:px-10 lg:px-16 pointer-events-auto max-h-[58vh]"
+        className="relative z-20 w-full flex-1 flex flex-col items-center justify-center my-auto px-4 sm:px-6 md:px-10 lg:px-16 pointer-events-auto max-h-[62vh] overflow-visible"
       >
         <div className="w-full max-w-[1540px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
           
@@ -456,7 +460,6 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
           >
             {mounted ? (
               <BoxCarousel
-                key={`${width}-${height}`}
                 ref={carouselRef}
                 items={carouselItems}
                 width={width}
@@ -531,9 +534,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
       {/* 5 Skills Center Overlay on Dark Canvas */}
       <div
         ref={skillsContainerRef}
-        className={`absolute inset-0 z-30 flex flex-col items-center justify-center opacity-0 ${
-          skillsInView ? "pointer-events-auto" : "pointer-events-none"
-        }`}
+        className="absolute inset-0 z-30 flex flex-col items-center justify-center opacity-0 pointer-events-none"
       >
         <div
           className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 md:gap-2 px-4 w-full max-w-5xl text-center ${

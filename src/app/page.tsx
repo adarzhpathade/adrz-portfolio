@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -10,6 +10,7 @@ import Page2 from "./components/Page2";
 import Page3 from "./components/Page3";
 import Page4 from "./components/Page4";
 import AboutCard from "./components/AboutCard";
+import Preloader from "./components/Preloader";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -19,6 +20,44 @@ export default function Home() {
   const containerRef = useRef<HTMLElement>(null);
   const lightCanvasRef = useRef<HTMLDivElement>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isPreloaderExiting, setIsPreloaderExiting] = useState(false);
+  const [isPreloaderComplete, setIsPreloaderComplete] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+
+  const handleToggleAbout = () => {
+    if (typeof window !== "undefined") {
+      const scrollY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const p = maxScroll > 0 ? scrollY / maxScroll : 0;
+      setIsDarkTheme(p < 0.24 || p >= 0.74);
+    }
+    setIsAboutOpen((prev) => !prev);
+  };
+
+  // Lock scroll during initial preloader presentation
+  useEffect(() => {
+    const preventScroll = (e: Event) => {
+      e.preventDefault();
+    };
+
+    if (!isPreloaderComplete) {
+      document.body.style.overflow = "hidden";
+      window.scrollTo(0, 0);
+      (window as any).__lenis?.stop();
+      window.addEventListener("wheel", preventScroll, { passive: false });
+      window.addEventListener("touchmove", preventScroll, { passive: false });
+    } else {
+      document.body.style.overflow = "";
+      (window as any).__lenis?.start();
+      (window as any).__lenis?.scrollTo(0, { immediate: true });
+      ScrollTrigger.refresh();
+    }
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+    };
+  }, [isPreloaderComplete]);
 
   useGSAP(
     () => {
@@ -32,6 +71,14 @@ export default function Home() {
           end: "+=600%",
           scrub: 1,
           invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            // 0.00 -> 0.24: Hero (Dark)
+            // 0.24 -> 0.74: Page 2 & Page 3 Carousel (Light)
+            // 0.74 -> 1.00: Page 3 Skills & Page 4 (Dark)
+            const p = self.progress;
+            const dark = p < 0.24 || p >= 0.74;
+            setIsDarkTheme(dark);
+          },
         },
       });
 
@@ -75,8 +122,13 @@ export default function Home() {
         0.93
       );
 
-      // Unblock pointer events for Page 4 once lightCanvas has moved out
-      tl.set(lightCanvas, { pointerEvents: "none" }, 0.98);
+      // Unblock pointer events for Page 4 once lightCanvas has moved out, and restore on reverse scrub
+      tl.fromTo(
+        lightCanvas,
+        { pointerEvents: "auto" },
+        { pointerEvents: "none", duration: 0.02 },
+        0.98
+      );
 
       // Explicitly anchor timeline total duration to 1.0
       tl.set({}, {}, 1.0);
@@ -94,13 +146,14 @@ export default function Home() {
       <GlobalNav 
         scrollTriggerTrigger="#main-scroll-container" 
         isAboutOpen={isAboutOpen}
-        onToggleAbout={() => setIsAboutOpen((prev) => !prev)}
+        onToggleAbout={handleToggleAbout}
       />
 
-      {/* About Card Overlay — reveals smoothly from the (About) anchor */}
+      {/* About Card Overlay — reveals smoothly with adaptive dark/light theme */}
       <AboutCard 
         isOpen={isAboutOpen} 
         onClose={() => setIsAboutOpen(false)} 
+        isDark={isDarkTheme}
       />
 
       {/* Sticky viewport pinned smoothly for the duration of the scroll animation */}
@@ -132,10 +185,19 @@ export default function Home() {
           <HeroSection 
             scrollTriggerTrigger="#main-scroll-container" 
             isAboutOpen={isAboutOpen}
-            onToggleAbout={() => setIsAboutOpen((prev) => !prev)}
+            onToggleAbout={handleToggleAbout}
+            isReady={isPreloaderExiting}
           />
         </div>
       </div>
+
+      {/* Initial cinematic Page Preloader */}
+      {!isPreloaderComplete && (
+        <Preloader 
+          onStartExit={() => setIsPreloaderExiting(true)}
+          onComplete={() => setIsPreloaderComplete(true)}
+        />
+      )}
 
       {/* Scroll track providing the smooth scroll distance (600vh) */}
       <div className="h-[600vh] w-full pointer-events-none" />
