@@ -18,6 +18,8 @@ type BlurTextProps = {
   easing?: Easing | Easing[];
   onAnimationComplete?: () => void;
   stepDuration?: number;
+  trigger?: boolean;
+  initialDelay?: number;
 };
 
 const buildKeyframes = (
@@ -45,7 +47,9 @@ const BlurText: React.FC<BlurTextProps> = ({
   animationTo,
   easing = (t: number) => t,
   onAnimationComplete,
-  stepDuration = 0.35
+  stepDuration = 0.35,
+  trigger,
+  initialDelay = 0,
 }) => {
   const elements = useMemo(() => {
     if (Array.isArray(text)) {
@@ -68,6 +72,7 @@ const BlurText: React.FC<BlurTextProps> = ({
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    if (trigger !== undefined) return;
     if (!ref.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -80,7 +85,9 @@ const BlurText: React.FC<BlurTextProps> = ({
     );
     observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [threshold, rootMargin]);
+  }, [threshold, rootMargin, trigger]);
+
+  const shouldAnimate = trigger !== undefined ? trigger : inView;
 
   const defaultFrom = useMemo(
     () =>
@@ -108,14 +115,14 @@ const BlurText: React.FC<BlurTextProps> = ({
   const times = Array.from({ length: stepCount }, (_, i) => (stepCount === 1 ? 0 : i / (stepCount - 1)));
 
   return (
-    <span ref={ref} className={`blur-text ${className} flex flex-wrap`}>
+    <span ref={ref} className={`blur-text inline-flex flex-wrap items-baseline ${className}`.trim()}>
       {elements.map((segment, index) => {
         const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
 
         const spanTransition: Transition = {
           duration: totalDuration,
           times,
-          delay: (index * delay) / 1000,
+          delay: (initialDelay || 0) + (index * delay) / 1000,
           ease: easing
         };
 
@@ -123,14 +130,14 @@ const BlurText: React.FC<BlurTextProps> = ({
           <motion.span
             key={index}
             initial={fromSnapshot}
-            animate={inView ? animateKeyframes : fromSnapshot}
+            animate={shouldAnimate ? animateKeyframes : fromSnapshot}
             transition={spanTransition}
             onAnimationComplete={index === elements.length - 1 ? onAnimationComplete : undefined}
             style={{
               display: 'inline-block',
               willChange: 'transform, filter, opacity'
             }}
-            className={segment.className}
+            className={`blur-text-letter ${segment.className || ''}`.trim()}
           >
             {segment.char === ' ' ? '\u00A0' : segment.char}
             {animateBy === 'words' && index < elements.length - 1 && '\u00A0'}

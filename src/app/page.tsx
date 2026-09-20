@@ -26,25 +26,36 @@ export default function Home() {
         scrollTrigger: {
           trigger: "#main-scroll-container",
           start: "top top",
-          end: "+=360%",
+          end: "+=480%",
           scrub: 1,
           invalidateOnRefresh: true,
         },
       });
 
-      // 0.00 -> 0.68: lightCanvas stays at yPercent: 0 (showing Page 2)
-      // 0.68 -> 0.92: lightCanvas smoothly scrolls up by 50% of its height,
+      // 0.00 -> 0.53: lightCanvas stays at yPercent: 0 (showing Page 2)
+      // 0.53 -> 0.70: lightCanvas smoothly scrolls up by 50% of its height,
       // bringing Page 3 100% fully into the viewport
-      // 0.92 -> 1.00: Page 3 holds fully in place while box reveals
+      // 0.70 -> 0.83: Page 3 holds fully in place for interactive 3D exploration
       tl.fromTo(
         lightCanvas,
         { yPercent: 0 },
         {
           yPercent: -50,
           ease: "power1.inOut",
-          duration: 0.24,
+          duration: 0.17,
         },
-        0.68
+        0.53
+      );
+
+      // 0.83 -> 0.98: lightCanvas background smoothly transitions to dark (#080808)
+      tl.to(
+        lightCanvas,
+        {
+          backgroundColor: "#080808",
+          ease: "power1.inOut",
+          duration: 0.15,
+        },
+        0.83
       );
 
       // Explicitly anchor timeline total duration to 1.0
@@ -87,8 +98,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Scroll track providing the smooth scroll distance (360vh) */}
-      <div className="h-[360vh] w-full pointer-events-none" />
+      {/* Scroll track providing the smooth scroll distance (480vh) */}
+      <div className="h-[480vh] w-full pointer-events-none" />
     </main>
   );
 }

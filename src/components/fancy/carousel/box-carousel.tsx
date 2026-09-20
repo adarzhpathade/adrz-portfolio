@@ -76,10 +76,19 @@ interface FaceProps {
 }
 
 const CubeFace = memo(
-  ({ transform, className, children, style, debug }: FaceProps) => (
+  ({
+    transform,
+    className,
+    children,
+    style,
+    debug,
+    isDragging,
+    enableDrag,
+  }: FaceProps & { isDragging?: boolean; enableDrag?: boolean }) => (
     <div
       className={cn(
-        "absolute overflow-hidden",
+        "absolute overflow-hidden select-none",
+        enableDrag && (isDragging ? "cursor-grabbing" : "cursor-grab"),
         debug && "backface-visible opacity-50",
         className
       )}
@@ -108,11 +117,15 @@ const MediaRenderer = memo(
           <video
             src={item.src}
             poster={item.poster}
-            className={cn("w-full h-full object-cover", className)}
+            className={cn(
+              "w-full h-full object-cover select-none pointer-events-none",
+              className
+            )}
             muted
             loop
             autoPlay
             playsInline
+            draggable={false}
           />
         );
       }
@@ -122,7 +135,10 @@ const MediaRenderer = memo(
           src={item.src}
           alt={item.alt || ""}
           draggable={false}
-          className={cn("w-full h-full object-cover", className)}
+          className={cn(
+            "w-full h-full object-cover select-none pointer-events-none",
+            className
+          )}
         />
       );
     }
@@ -130,7 +146,7 @@ const MediaRenderer = memo(
     return (
       <div
         className={cn(
-          "w-full h-full flex items-center justify-center border text-2xl",
+          "w-full h-full flex items-center justify-center border text-2xl select-none pointer-events-none",
           className
         )}
       >
@@ -281,6 +297,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
   ) => {
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [currentFrontFaceIndex, setCurrentFrontFaceIndex] = useState(1);
+    const [isHovered, setIsHovered] = useState(false);
+    const [isDraggingState, setIsDraggingState] = useState(false);
 
     const prefersReducedMotion = useReducedMotion();
 
@@ -372,12 +390,20 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         if (!enableDrag || isRotating.current) return;
 
         isDragging.current = true;
+        setIsDraggingState(true);
         const point = "touches" in e ? e.touches[0] : e;
         startPosition.current = { x: point.clientX, y: point.clientY };
         startRotation.current = currentRotation;
 
-        // Prevent default to avoid text selection
-        e.preventDefault();
+        if (typeof document !== "undefined") {
+          document.body.style.cursor = "grabbing";
+          document.body.style.userSelect = "none";
+        }
+
+        // Prevent default to avoid text selection / native image drag
+        if ("cancelable" in e && e.cancelable) {
+          e.preventDefault();
+        }
       },
       [enableDrag, currentRotation]
     );
@@ -392,7 +418,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
 
         const isVertical = direction === "top" || direction === "bottom";
         const delta = isVertical ? deltaY : deltaX;
-        const rotationDelta = (delta * dragSensitivity) / 2;
+        const rotationDelta = delta * dragSensitivity;
 
         let newRotation = startRotation.current;
 
@@ -414,13 +440,19 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
           baseRotateY.set(newRotation);
         }
       },
-      [enableDrag, direction, dragSensitivity, baseRotateX, baseRotateY]
+      [direction, dragSensitivity, baseRotateX, baseRotateY]
     );
 
     const handleDragEnd = useCallback(() => {
       if (!isDragging.current) return;
 
       isDragging.current = false;
+      setIsDraggingState(false);
+
+      if (typeof document !== "undefined") {
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
 
       const isVertical = direction === "top" || direction === "bottom";
       const currentValue = isVertical ? baseRotateX.get() : baseRotateY.get();
@@ -473,6 +505,16 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
       snapTransition,
       handleAnimationComplete,
     ]);
+
+    // Cleanup global cursor styles on unmount
+    useEffect(() => {
+      return () => {
+        if (typeof document !== "undefined") {
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+        }
+      };
+    }, []);
 
     // Set up global event listeners for drag
     useEffect(() => {
@@ -592,9 +634,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
     );
 
     const transform = useTransform(
-      isDragging.current
-        ? [springRotateX, springRotateY]
-        : [baseRotateX, baseRotateY],
+      [baseRotateX, baseRotateY],
       ([x, y]) =>
         `translateZ(-${depth / 2}px) rotateX(${x}deg) rotateY(${y}deg)`
     );
@@ -640,13 +680,13 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
       }
     }, [direction, width, height, depth]);
 
-    // Auto play functionality
+    // Auto play functionality - pauses on hover and during drag
     useEffect(() => {
-      if (autoPlay && items.length > 0) {
+      if (autoPlay && items.length > 0 && !isHovered && !isDraggingState) {
         const interval = setInterval(next, autoPlayInterval);
         return () => clearInterval(interval);
       }
-    }, [autoPlay, items.length, next, autoPlayInterval]);
+    }, [autoPlay, items.length, next, autoPlayInterval, isHovered, isDraggingState]);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent) => {
@@ -687,8 +727,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
     return (
       <div
         className={cn(
-          "relative focus:outline-0",
-          enableDrag && "cursor-move",
+          "relative focus:outline-0 select-none group",
+          enableDrag && (isDraggingState ? "cursor-grabbing" : "cursor-grab"),
           className
         )}
         style={{
@@ -702,6 +742,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         aria-describedby="carousel-instructions"
         aria-live="polite"
         aria-atomic="true"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onMouseDown={handleDragStart}
         onTouchStart={handleDragStart}
         {...props}
@@ -726,6 +768,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
                 : { width, height }
             }
             debug={debug}
+            isDragging={isDraggingState}
+            enableDrag={enableDrag}
           >
             <MediaRenderer item={items[prevIndex]} debug={debug} />
           </CubeFace>
@@ -739,6 +783,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
                 : { width, height }
             }
             debug={debug}
+            isDragging={isDraggingState}
+            enableDrag={enableDrag}
           >
             <MediaRenderer item={items[currentIndex]} debug={debug} />
           </CubeFace>
@@ -752,6 +798,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
                 : { width, height }
             }
             debug={debug}
+            isDragging={isDraggingState}
+            enableDrag={enableDrag}
           >
             <MediaRenderer item={items[nextIndex]} debug={debug} />
           </CubeFace>
@@ -765,10 +813,28 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
                 : { width, height }
             }
             debug={debug}
+            isDragging={isDraggingState}
+            enableDrag={enableDrag}
           >
             <MediaRenderer item={items[afterNextIndex]} debug={debug} />
           </CubeFace>
         </motion.div>
+
+        {/* Sleek subtle drag affordance pill on hover */}
+        {enableDrag && (
+          <div
+            className={cn(
+              "absolute -bottom-8 sm:-bottom-9 left-1/2 -translate-x-1/2 z-30 pointer-events-none transition-all duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#080808]/85 text-[#ECECEC] text-[8px] sm:text-[9px] font-mono tracking-widest uppercase backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap",
+              isHovered || isDraggingState
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-1.5"
+            )}
+          >
+            <span className="text-[7px] sm:text-[8px] opacity-70">←</span>
+            <span>{isDraggingState ? "TURNING" : "DRAG TO TURN"}</span>
+            <span className="text-[7px] sm:text-[8px] opacity-70">→</span>
+          </div>
+        )}
       </div>
     );
   }

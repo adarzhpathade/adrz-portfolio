@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import ReflectShader from "@/components/originkit/ui/reflect-shader";
 import LetterSwapPingPong from "@/components/fancy/text/letter-swap-pingpong-anim";
+import BlurText from "@/components/react-bits/BlurText";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -26,6 +27,7 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
   const aboutRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
   const centerTextRef = useRef<HTMLDivElement>(null);
+  const heroTitleRef = useRef<HTMLDivElement>(null);
   const revealTextRef = useRef<HTMLDivElement>(null);
   const bottomHeadingRef = useRef<HTMLDivElement>(null);
 
@@ -35,47 +37,48 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
     const about = aboutRef.current;
     const contact = contactRef.current;
     const centerText = centerTextRef.current;
+    const heroTitle = heroTitleRef.current;
     const revealText = revealTextRef.current;
     const bottomHeading = bottomHeadingRef.current;
 
-    if (!section || !rectangle || !about || !contact || !centerText || !revealText || !bottomHeading) return;
+    if (!section || !rectangle || !about || !contact || !centerText || !heroTitle || !revealText || !bottomHeading) return;
 
     // Master scroll timeline synchronized with GlobalNav, Page2, and Page3
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=360%", 
+        end: "+=480%", 
         scrub: 1,
         invalidateOnRefresh: true,
       },
     });
 
-    // --- PHASE 1: Hero Reveal (0.00 -> 0.28) ---
+    // --- PHASE 1: Hero Reveal (0.00 -> 0.21) ---
     // 1. Dark rectangle scrolls up and out (revealing the shader background)
     tl.to(rectangle, {
       yPercent: -100,
       ease: "none",
-      duration: 0.26,
+      duration: 0.20,
     }, 0);
 
     // 2. Center subtitle fades out quickly
     tl.to(centerText, {
       opacity: 0,
       ease: "power2.in",
-      duration: 0.12,
+      duration: 0.09,
     }, 0);
 
     // 3. Initial hero side links fade out quickly on scroll
     tl.to([about, contact], {
       opacity: 0,
-      duration: 0.05,
+      duration: 0.04,
       ease: "power2.in",
     }, 0);
 
     // 4. 3-line text words reveal with blur focus and subtle y translation
-    // Starts at 0.03, staggers across 0.10, duration 0.08 per word.
-    // By 0.21, EVERY word (including the entire last line) is 100% unblurred and sharp!
+    // Starts at 0.02, staggers across 0.08, duration 0.06 per word.
+    // By 0.16, EVERY word (including the entire last line) is 100% unblurred and sharp!
     const words = revealText.querySelectorAll<HTMLElement>(".reveal-word");
     tl.fromTo(
       words,
@@ -85,47 +88,54 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
         y: 20,
       },
       {
-        opacity: 1,
+        opacity: 0.55,
         filter: "blur(0px)",
         y: 0,
         stagger: {
-          amount: 0.10,
+          amount: 0.08,
           ease: "power1.inOut",
         },
         ease: "power2.out",
-        duration: 0.08,
+        duration: 0.06,
       },
-      0.03
+      0.02
     );
 
-    // 5. Bottom "DESIGN — Folio" fades out with blur
+    // 5. Bottom "DESIGN — Folio" fades out promptly on scroll so it does not linger after rectangle moves
     tl.to(bottomHeading, {
       opacity: 0,
-      filter: "blur(12px)",
-      ease: "power2.in",
-      duration: 0.12,
+      filter: "blur(14px)",
+      ease: "power1.out",
+      duration: 0.04,
     }, 0);
 
-    // --- PHASE 1.5: Hold Hero Revealed State (0.26 -> 0.33) ---
+    // --- PHASE 1.5: Hold Hero Revealed State (0.16 -> 0.25) ---
     // All 3 lines hold 100% crystal clear with zero blur while ReflectShader pulses
 
-    // --- PHASE 2: Transition to Page 2 (0.33 -> 0.56) ---
+    // --- PHASE 2: Transition to Page 2 (0.25 -> 0.42) ---
     // 6. 3-line text fades out and blurs upwards
     tl.to(revealText, {
       opacity: 0,
       filter: "blur(12px)",
       y: -30,
       ease: "power2.in",
-      duration: 0.09,
-    }, 0.33);
+      duration: 0.07,
+    }, 0.25);
+
+    // 6b. Hero main title fades out at 0.25 as GlobalNav smoothly scales the persistent logo into position
+    tl.to(heroTitle, {
+      opacity: 0,
+      ease: "power1.in",
+      duration: 0.03,
+    }, 0.25);
 
     // 7. Hero section physically slides up and out of the viewport,
     // revealing the light-colored Page 2 sitting underneath
     tl.to(section, {
       yPercent: -100,
       ease: "power1.inOut",
-      duration: 0.23,
-    }, 0.33);
+      duration: 0.17,
+    }, 0.25);
 
     // Explicitly anchor timeline total duration to 1.0
     tl.set({}, {}, 1.0);
@@ -149,11 +159,21 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
       {/* Text content overlay */}
       <div className="relative z-20 mix-blend-difference w-full h-[80vh] flex flex-col justify-between pt-0 pb-4 pointer-events-none">
         <div className="w-full relative flex flex-col items-center pt-4 md:pt-0">
-          {/* Layout spacer for main heading (the visible heading is animated in GlobalNav) */}
-          <div className="z-10 text-center flex items-center justify-center opacity-0 pointer-events-none select-none" aria-hidden="true">
-            <h2 className="text-6xl sm:text-8xl lg:text-[10rem] xl:text-[12rem] font-[380] tracking-normal uppercase leading-none flex items-center justify-center">
-              ADARSH<span className="font-display italic font-normal normal-case">'26</span>
-            </h2>
+          {/* Main Hero Heading — actively reacts with animated ReflectShader background via mix-blend-difference */}
+          <div ref={heroTitleRef} id="hero-main-title" className="z-10 text-center flex items-center justify-center select-none pointer-events-auto">
+            <h1 className="text-6xl sm:text-8xl lg:text-[10rem] xl:text-[12rem] font-[380] tracking-normal uppercase leading-none flex items-center justify-center text-white">
+              <BlurText 
+                text={[
+                  { text: "ADARSH" },
+                  { text: "'26", className: "font-display italic font-normal normal-case" }
+                ]} 
+                delay={30}
+                stepDuration={0.25}
+                animateBy="letters" 
+                direction="top" 
+                className="inline-flex" 
+              />
+            </h1>
           </div>
           
           {/* Initial Hero links: (About) & (Contact) — visible on load, fade out on scroll */}
@@ -189,7 +209,7 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
           >
-            <p className="font-mono text-[10px] sm:text-xs tracking-normal uppercase text-text-light">
+            <p className="text-[8px] sm:text-[10px] font-mono tracking-normal text-text-light/70 leading-tight uppercase">
               MIXING CODE, AI, MOTION, &amp; VISUALS
             </p>
           </motion.div>
@@ -217,10 +237,20 @@ export default function HeroSection({ scrollTriggerTrigger = "#main-scroll-conta
           ))}
         </div>
 
-        {/* Bottom "DESIGN — Folio" text */}
-        <div ref={bottomHeadingRef} className="w-full flex justify-center">
+        {/* Bottom "DESIGN — Folio" text with React Bits BlurText reveal */}
+        <div ref={bottomHeadingRef} className="w-full flex justify-center pointer-events-none select-none">
           <h2 className="text-lg sm:text-2xl lg:text-[2rem] font-normal tracking-tight uppercase leading-none flex items-center justify-center">
-            DESIGN — <span className="font-display italic font-normal normal-case ml-2">Folio</span>
+            <BlurText
+              text={[
+                { text: "DESIGN — " },
+                { text: "Folio", className: "font-display italic font-normal normal-case ml-2" },
+              ]}
+              delay={35}
+              stepDuration={0.25}
+              animateBy="letters"
+              direction="top"
+              className="inline-flex items-center justify-center !flex-nowrap"
+            />
           </h2>
         </div>
       </div>

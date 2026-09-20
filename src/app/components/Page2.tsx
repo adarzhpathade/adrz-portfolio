@@ -65,10 +65,10 @@ export default function Page2({
       ScrollTrigger.create({
         trigger: scrollTriggerTrigger,
         start: "top top",
-        end: "+=360%",
+        end: "+=480%",
         onUpdate: (self) => {
-          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 50%+)
-          if (self.progress >= 0.50) {
+          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 38%+)
+          if (self.progress >= 0.38) {
             if (!hasEntered) {
               hasEntered = true;
               carouselWrapper.style.pointerEvents = "auto";
@@ -79,7 +79,7 @@ export default function Page2({
               });
               setEntryTrigger((prev) => prev + 1);
             }
-          } else if (self.progress < 0.35) {
+          } else if (self.progress < 0.26) {
             // User scrolled back up towards the Hero — hide and prepare for next entry
             if (hasEntered) {
               hasEntered = false;
@@ -157,15 +157,15 @@ export default function Page2({
 
         {/* Bottom bio / description — 3 balanced lines on mobile, 2 lines on desktop */}
         <div className="absolute bottom-8 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full text-center px-4 z-40 pointer-events-auto">
-          {/* Mobile 3-line balanced block (uniform line lengths: 39 / 39 / 36 chars) */}
-          <p className="block sm:hidden text-[10.5px] font-mono tracking-wider text-[#080808]/80 leading-[1.65] uppercase">
+          {/* Mobile 3-line balanced block */}
+          <p className="block sm:hidden text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
             A COLLECTION OF ORIGINAL MOTION GRAPHICS<br />
             AND VISUAL EXPERIMENTS, CRAFTED THROUGH<br />
             DESIGN, ANIMATION AND AFTER EFFECTS.
           </p>
 
           {/* Tablet/Desktop 2-line layout */}
-          <p className="hidden sm:block sm:text-[11px] md:text-xs font-mono tracking-wider text-[#080808]/80 leading-relaxed uppercase">
+          <p className="hidden sm:block text-[8px] sm:text-[10px] font-mono tracking-normal text-[#080808]/70 leading-tight uppercase">
             A collection of original motion graphics and visual experiments,<br />
             crafted through design, animation and After Effects.
           </p>
