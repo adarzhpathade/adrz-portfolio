@@ -11,8 +11,7 @@ Last updated: 2026-09-20 (Verified with 0 TypeScript/build errors)
    - Added `select-none pointer-events-none` to all media elements (images and videos) in `MediaRenderer` to eliminate native browser drag ghosting.
    - Fixed pointer event blocking from the invisible dark canvas skills overlay (`skillsContainerRef`), allowing mouse hover and click events to directly reach the 3D cube.
    - Upgraded drag responsiveness (`delta * dragSensitivity`) and motion value transform sync (`[baseRotateX, baseRotateY]`), enabling fluid 1:1 rotation and spring snapping to adjacent project faces.
-   - Added auto-pause on hover and drag so the autoplay rotation never fights or interrupts user interaction.
-   - Added a minimal, subtle affordance pill (`← DRAG TO TURN →` / `TURNING`) that smoothly fades in on hover just beneath the cube.
+   - Drag affordance is communicated cleanly and unobtrusively via `cursor-grab` on hover and `cursor-grabbing` during drag (no extra floating text pills).
 
 2. **Skills Section Refinement on Dark Canvas** ([src/app/components/Page3.tsx](file:///e:/Projects/Landing%20Pages/adrz%20-%20Portfolio/src/app/components/Page3.tsx)):
    - Centered 5 discipline items revealed with `LetterSwapPingPong` slot-machine hover animations.

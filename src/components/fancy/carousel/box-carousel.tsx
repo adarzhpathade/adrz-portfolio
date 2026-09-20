@@ -819,22 +819,6 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
             <MediaRenderer item={items[afterNextIndex]} debug={debug} />
           </CubeFace>
         </motion.div>
-
-        {/* Sleek subtle drag affordance pill on hover */}
-        {enableDrag && (
-          <div
-            className={cn(
-              "absolute -bottom-8 sm:-bottom-9 left-1/2 -translate-x-1/2 z-30 pointer-events-none transition-all duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#080808]/85 text-[#ECECEC] text-[8px] sm:text-[9px] font-mono tracking-widest uppercase backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap",
-              isHovered || isDraggingState
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-1.5"
-            )}
-          >
-            <span className="text-[7px] sm:text-[8px] opacity-70">←</span>
-            <span>{isDraggingState ? "TURNING" : "DRAG TO TURN"}</span>
-            <span className="text-[7px] sm:text-[8px] opacity-70">→</span>
-          </div>
-        )}
       </div>
     );
   }
