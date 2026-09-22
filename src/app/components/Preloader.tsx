@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import gsap from "gsap";
 
 interface PreloaderProps {
@@ -17,108 +17,8 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
   const counterNumberRef = useRef<HTMLSpanElement>(null);
   const exitStartedRef = useRef(false);
 
-  useEffect(() => {
-    // 1. Asset & Readiness Tracking
-    let assetsLoaded = false;
-
-    const checkReadiness = async () => {
-      try {
-        // Wait for window load
-        if (document.readyState !== "complete") {
-          await new Promise<void>((resolve) => {
-            window.addEventListener("load", () => resolve(), { once: true });
-          });
-        }
-
-        // Wait for custom fonts to be decoded and ready
-        if (document.fonts) {
-          await document.fonts.ready;
-        }
-
-        // Wait for critical images
-        const images = Array.from(document.querySelectorAll("img"));
-        await Promise.all(
-          images.map((img) => {
-            if (img.complete) return Promise.resolve();
-            return new Promise((res) => {
-              img.onload = res;
-              img.onerror = res;
-            });
-          })
-        );
-      } catch (err) {
-        console.warn("Preloader asset check warning:", err);
-      } finally {
-        assetsLoaded = true;
-      }
-    };
-
-    checkReadiness();
-
-    // Fallback safety: ensure assetsLoaded is true after 3.5s maximum
-    const safetyTimer = setTimeout(() => {
-      assetsLoaded = true;
-    }, 3500);
-
-    // 2. Smooth Paced Progress Animation (Direct DOM update — Zero React re-renders)
-    const progressObj = { val: 0 };
-    let animFrame: number;
-
-    const startTime = performance.now();
-    const minDuration = 1800; // Minimum 1.8s for cinematic feel
-
-    const updateProgress = () => {
-      const elapsed = performance.now() - startTime;
-      const timeRatio = Math.min(elapsed / minDuration, 1);
-
-      let targetVal = 0;
-      if (!assetsLoaded) {
-        // Hold around 85-90% if assets are still fetching
-        targetVal = Math.min(timeRatio * 90, 89);
-      } else {
-        // Assets are ready: ease smoothly to 100%
-        if (timeRatio < 1) {
-          targetVal = timeRatio * 100;
-        } else {
-          targetVal = 100;
-        }
-      }
-
-      // Smooth lerp towards targetVal
-      progressObj.val += (targetVal - progressObj.val) * 0.12;
-      const currentInt = Math.floor(progressObj.val);
-
-      if (counterNumberRef.current) {
-        counterNumberRef.current.textContent = String(currentInt).padStart(2, "0");
-      }
-
-      if (targetVal >= 99.5 && progressObj.val >= 99) {
-        progressObj.val = 100;
-        if (counterNumberRef.current) {
-          counterNumberRef.current.textContent = "100";
-        }
-
-        if (!exitStartedRef.current) {
-          exitStartedRef.current = true;
-          // Hold 100% briefly, then trigger morph
-          setTimeout(startExitAnimation, 220);
-        }
-        return;
-      }
-
-      animFrame = requestAnimationFrame(updateProgress);
-    };
-
-    animFrame = requestAnimationFrame(updateProgress);
-
-    return () => {
-      clearTimeout(safetyTimer);
-      cancelAnimationFrame(animFrame);
-    };
-  }, []);
-
-  // 3. Exit Morph Choreography
-  const startExitAnimation = () => {
+  // Exit Morph Choreography
+  const startExitAnimation = useCallback(() => {
     onStartExit?.();
 
     const backdrop = backdropRef.current;
@@ -163,13 +63,17 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
     );
 
     // C. ADARSH'26 scales up and moves from below center line up to top of hero section
-    // Starting state: y = 42vh, scale = 0.38
+    // Starting state: y = 44vh (mobile) / 43.5vh (desktop), scale = 0.70 (mobile) / 0.62 (desktop)
     // Target state: y = 0, scale = 1.0 (exact match to HeroSection hero-main-title)
+    const isMobile = window.innerWidth < 768;
+    const initialScale = isMobile ? 0.70 : 0.62;
+    const initialY = isMobile ? "44vh" : "43.5vh";
+
     tl.fromTo(
       title,
       {
-        y: "42vh",
-        scale: 0.38,
+        y: initialY,
+        scale: initialScale,
       },
       {
         y: 0,
@@ -203,16 +107,116 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
       },
       1.15
     );
-  };
+  }, [onStartExit, onComplete]);
+
+  useEffect(() => {
+    // 1. Asset & Readiness Tracking
+    let assetsLoaded = false;
+
+    const checkReadiness = async () => {
+      try {
+        // Wait for window load
+        if (document.readyState !== "complete") {
+          await new Promise<void>((resolve) => {
+            window.addEventListener("load", () => resolve(), { once: true });
+          });
+        }
+
+        // Wait for custom fonts to be decoded and ready
+        if (document.fonts) {
+          await document.fonts.ready;
+        }
+
+        // Wait for all critical DOM images
+        const images = Array.from(document.images);
+        await Promise.all(
+          images.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((res) => {
+              img.onload = res;
+              img.onerror = res;
+            });
+          })
+        );
+      } catch (err) {
+        console.warn("Preloader asset check warning:", err);
+      } finally {
+        assetsLoaded = true;
+      }
+    };
+
+    checkReadiness();
+
+    // Fallback safety: ensure assetsLoaded is true after 3.5s maximum
+    const safetyTimer = setTimeout(() => {
+      assetsLoaded = true;
+    }, 3500);
+
+    // 2. Smooth Numerical Progress Animation
+    let animFrame = 0;
+    const progressObj = { val: 0 };
+    const startTime = performance.now();
+
+    const updateProgress = (currentTime: number) => {
+      const elapsed = (currentTime - startTime) / 1000;
+
+      // Realistic progressive curve: accelerates to 88% while loading assets, then sprints to 100%
+      let targetVal: number;
+      if (!assetsLoaded) {
+        targetVal = Math.min(88, elapsed * 42);
+      } else {
+        targetVal = 100;
+      }
+
+      // Smooth lerp towards target
+      const lerpSpeed = assetsLoaded ? 0.14 : 0.08;
+      progressObj.val += (targetVal - progressObj.val) * lerpSpeed;
+
+      const currentInt = Math.floor(progressObj.val);
+
+      if (counterNumberRef.current) {
+        counterNumberRef.current.textContent = String(currentInt).padStart(2, "0");
+      }
+
+      if (progressObj.val >= 99.5) {
+        progressObj.val = 100;
+        if (counterNumberRef.current) {
+          counterNumberRef.current.textContent = "100";
+        }
+
+        if (!exitStartedRef.current) {
+          exitStartedRef.current = true;
+          // Hold 100% briefly, then trigger morph
+          setTimeout(() => {
+            startExitAnimation();
+          }, 220);
+        }
+        return;
+      }
+
+      animFrame = requestAnimationFrame(updateProgress);
+    };
+
+    animFrame = requestAnimationFrame(updateProgress);
+
+    return () => {
+      clearTimeout(safetyTimer);
+      cancelAnimationFrame(animFrame);
+    };
+  }, [startExitAnimation]);
 
   // Lock initial GSAP values so they align 1:1 with inline CSS
   useEffect(() => {
     const title = titleRef.current;
     if (!title) return;
 
+    const isMobile = window.innerWidth < 768;
+    const initialScale = isMobile ? 0.70 : 0.62;
+    const initialY = isMobile ? "44vh" : "43.5vh";
+
     gsap.set(title, {
-      y: "42vh",
-      scale: 0.38,
+      y: initialY,
+      scale: initialScale,
       transformOrigin: "center center",
       willChange: "transform",
     });
@@ -239,7 +243,7 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
               ref={titleRef}
               className="z-20 text-center flex items-center justify-center select-none pointer-events-none"
               style={{
-                transform: "translateY(42vh) scale(0.38)",
+                transform: "translateY(43.5vh) scale(0.62)",
                 transformOrigin: "center center",
                 willChange: "transform",
               }}

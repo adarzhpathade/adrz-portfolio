@@ -11,7 +11,6 @@ export default function SmoothScroll({
   children: React.ReactNode;
 }) {
   useEffect(() => {
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -24,7 +23,7 @@ export default function SmoothScroll({
     });
 
     if (typeof window !== "undefined") {
-      (window as any).__lenis = lenis;
+      window.__lenis = lenis;
     }
 
     lenis.on("scroll", ScrollTrigger.update);
@@ -38,7 +37,7 @@ export default function SmoothScroll({
 
     return () => {
       if (typeof window !== "undefined") {
-        delete (window as any).__lenis;
+        delete window.__lenis;
       }
       gsap.ticker.remove(updateRaf);
       lenis.destroy();

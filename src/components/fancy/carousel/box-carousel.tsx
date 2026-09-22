@@ -16,7 +16,6 @@ import {
   motion,
   useMotionValue,
   useReducedMotion,
-  useSpring,
   useTransform,
 } from "framer-motion";
 
@@ -47,6 +46,10 @@ interface CarouselItem {
    * (Optional) Poster image for videos (displayed before playback)
    */
   poster?: string;
+  /**
+   * (Optional) Link to project website
+   */
+  link?: string;
 }
 
 /**
@@ -88,7 +91,7 @@ const CubeFace = memo(
     <div
       className={cn(
         "absolute overflow-hidden select-none [backface-visibility:hidden]",
-        enableDrag && (isDragging ? "cursor-grabbing" : "cursor-grab"),
+        enableDrag && (isDragging ? "cursor-grabbing" : "cursor-pointer"),
         debug && "backface-visible opacity-50",
         className
       )}
@@ -271,6 +274,11 @@ interface BoxCarouselProps extends React.HTMLProps<HTMLDivElement> {
    * @default 0.5
    */
   dragSensitivity?: number;
+
+  /**
+   * Callback when a cube face is clicked without dragging
+   */
+  onItemClick?: (item: CarouselItem, index: number) => void;
 }
 
 const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
@@ -285,29 +293,34 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
       direction = "left",
       transition = { duration: 1.25, ease: [0.953, 0.001, 0.019, 0.995] },
       snapTransition = { type: "spring", damping: 30, stiffness: 200 },
-      dragSpring = { stiffness: 200, damping: 30 },
+      dragSpring: _dragSpring = { stiffness: 200, damping: 30 },
       autoPlay = false,
       autoPlayInterval = 3000,
       onIndexChange,
       enableDrag = true,
       dragSensitivity = 0.5,
+      onItemClick,
       ...props
     },
     ref
   ) => {
+    void _dragSpring;
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
-    const [currentFrontFaceIndex, setCurrentFrontFaceIndex] = useState(1);
     const [isHovered, setIsHovered] = useState(false);
     const [isDraggingState, setIsDraggingState] = useState(false);
 
     const prefersReducedMotion = useReducedMotion();
 
-    const _transition = prefersReducedMotion ? { duration: 0 } : transition;
-
-    const [currentRotation, setCurrentRotation] = useState(0);
+    const _transition = useMemo(
+      () => (prefersReducedMotion ? { duration: 0 } : transition),
+      [prefersReducedMotion, transition]
+    );
 
     const isRotating = useRef(false);
     const isDragging = useRef(false);
+    const hasDragged = useRef(false);
+    const dragDistance = useRef(0);
+    const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const startPosition = useRef({ x: 0, y: 0 });
     const startRotation = useRef(0);
     const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -335,6 +348,13 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         releaseLock();
 
         isDragging.current = true;
+        hasDragged.current = false;
+        dragDistance.current = 0;
+        if (dragTimeoutRef.current) {
+          clearTimeout(dragTimeoutRef.current);
+          dragTimeoutRef.current = null;
+        }
+
         setIsDraggingState(true);
         const point = "touches" in e ? e.touches[0] : e;
         startPosition.current = { x: point.clientX, y: point.clientY };
@@ -361,6 +381,11 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         const point = "touches" in e ? e.touches[0] : e;
         const deltaX = point.clientX - startPosition.current.x;
         const deltaY = point.clientY - startPosition.current.y;
+        const dist = Math.hypot(deltaX, deltaY);
+        dragDistance.current = dist;
+        if (dist > 6) {
+          hasDragged.current = true;
+        }
 
         const isVertical = direction === "top" || direction === "bottom";
         const delta = isVertical ? deltaY : deltaX;
@@ -399,6 +424,13 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         document.body.style.userSelect = "";
       }
 
+      // Keep hasDragged flag active briefly so the synthetic click event (right after mouseup) is ignored
+      if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = setTimeout(() => {
+        hasDragged.current = false;
+        dragDistance.current = 0;
+      }, 150);
+
       const isVertical = direction === "top" || direction === "bottom";
       const targetMotionValue = isVertical ? baseRotateX : baseRotateY;
       const currentValue = targetMotionValue.get();
@@ -415,7 +447,6 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         ...snapTransition,
         onComplete: () => {
           releaseLock();
-          setCurrentRotation(snappedRotation);
           const normalizedTurn = ((quarterRotations % items.length) + items.length) % items.length;
           setCurrentItemIndex(normalizedTurn);
           onIndexChange?.(normalizedTurn);
@@ -430,6 +461,25 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
       onIndexChange,
       releaseLock,
     ]);
+
+    // Handle pure click on cube (not triggered during/after dragging)
+    const handleClick = useCallback(
+      (e: React.MouseEvent) => {
+        if (hasDragged.current || dragDistance.current > 6) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        const currentItem = items[currentItemIndex];
+        if (onItemClick) {
+          onItemClick(currentItem, currentItemIndex);
+        } else if (currentItem?.link) {
+          window.open(currentItem.link, "_blank", "noopener,noreferrer");
+        }
+      },
+      [items, currentItemIndex, onItemClick]
+    );
 
     // Stable global window listeners for drag
     const handleDragMoveRef = useRef(handleDragMove);
@@ -480,7 +530,6 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         ..._transition,
         onComplete: () => {
           releaseLock();
-          setCurrentRotation(targetRotation);
           const quarterRotations = Math.round(targetRotation / 90);
           const normalizedTurn =
             ((quarterRotations % items.length) + items.length) % items.length;
@@ -510,7 +559,6 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         ..._transition,
         onComplete: () => {
           releaseLock();
-          setCurrentRotation(targetRotation);
           const quarterRotations = Math.round(targetRotation / 90);
           const normalizedTurn =
             ((quarterRotations % items.length) + items.length) % items.length;
@@ -619,18 +667,28 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
               next();
             }
             break;
+          case "Enter":
+          case " ":
+            e.preventDefault();
+            const currentItem = items[currentItemIndex];
+            if (onItemClick) {
+              onItemClick(currentItem, currentItemIndex);
+            } else if (currentItem?.link) {
+              window.open(currentItem.link, "_blank", "noopener,noreferrer");
+            }
+            break;
           default:
             break;
         }
       },
-      [direction, next, prev]
+      [direction, next, prev, items, currentItemIndex, onItemClick]
     );
 
     return (
       <div
         className={cn(
           "relative focus:outline-0 select-none group",
-          enableDrag && (isDraggingState ? "cursor-grabbing" : "cursor-grab"),
+          enableDrag && (isDraggingState ? "cursor-grabbing" : "cursor-pointer"),
           className
         )}
         style={{
@@ -640,7 +698,8 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         }}
         onKeyDown={handleKeyDown}
         tabIndex={0}
-        aria-label={`3D carousel with ${items.length} items`}
+        role="button"
+        aria-label={`Open ${items[currentItemIndex]?.alt || `Item ${currentItemIndex + 1}`} project site`}
         aria-describedby="carousel-instructions"
         aria-live="polite"
         aria-atomic="true"
@@ -648,6 +707,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         onMouseLeave={() => setIsHovered(false)}
         onMouseDown={handleDragStart}
         onTouchStart={handleDragStart}
+        onClick={handleClick}
         {...props}
       >
         <div className="sr-only" aria-live="assertive">

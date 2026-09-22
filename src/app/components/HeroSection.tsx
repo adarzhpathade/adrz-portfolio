@@ -7,7 +7,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import ReflectShader from "@/components/originkit/ui/reflect-shader";
 import LetterSwapPingPong from "@/components/fancy/text/letter-swap-pingpong-anim";
-import BlurText from "@/components/react-bits/BlurText";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 

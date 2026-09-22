@@ -1,6 +1,6 @@
 # Memory — Adarsh'26 Portfolio (adrz)
 
-Last updated: 2026-09-20 (Production build verified — 0 errors, deployed to Vercel)
+Last updated: 2026-09-22 (Production build & ESLint clean — 0 errors, ready for deployment)
 
 ---
 
@@ -108,7 +108,7 @@ Total public/ size: ~10.8 MB. All filenames are kebab-case (no spaces, no specia
 
 ### 5. Carousel Systems
 - **LiquidGlassCarousel** (Page 2): WebGL/Three.js with video textures. Dynamic card dimensions (`targetHeight ≈ 44% vh`).
-- **BoxCarousel** (Page 3): CSS 3D cube with drag rotation. Dynamic dimensions (`targetHeight ≈ 31% vh`, aspect 1.71). Safety timeout guards on rotation lock to prevent drag deadlocks.
+- **BoxCarousel** (Page 3): CSS 3D cube with drag rotation and click-to-redirect. Dynamic dimensions (`targetHeight ≈ 31% vh`, aspect 1.71). Safety timeout guards on rotation lock to prevent drag deadlocks. Features click vs. drag disambiguation (>6px drag suppression + 150ms post-drag lock) allowing clicking any face to open its live project website.
 
 ### 6. Zoom Resilience
 - All display headings use dual-axis clamping: `clamp(min, vw, vh)` to prevent blowup on zoom-out.
@@ -156,6 +156,8 @@ Total public/ size: ~10.8 MB. All filenames are kebab-case (no spaces, no specia
 7. **Mobile GPU & Battery Drain**: Reduced DPR to 1.25 on mobile and added IntersectionObserver to pause offscreen WebGL shaders and carousel video decoding.
 8. **Layout Errors on Resize**: Removed `key={width-height}` from BoxCarousel. Added `backface-visibility: hidden` for WebKit z-buffer flicker.
 9. **Universal Scrollbar Removal**: Hidden across Chrome/Safari/Edge/Firefox via globals.css.
+10. **Mobile 3D Carousel Performance & Curvature**: Replaced heavy WebGL `LiquidGlassCarousel` on mobile `< 768px` with CSS 3D `CylinderCarousel` using 6 WebP posters (-96% payload). Fixed extreme inward fish-eye curvature by increasing perspective from 512px (32em) to 1600px, doubling small item sets to 12 facets (lowering card angle step from 60° to 30°), using a relaxed radius, and adopting a subtle convex stage orientation so the active card stays hero in front while side cards curve gracefully backward into depth.
+11. **Mobile Nav Refinement**: Enlarged `ADARSH'26` in `GlobalNav` to `targetScale: 0.50` (~23px) so it stands out distinctly larger than the `(About)` button (`text-xs` / 12px). Removed `(Contact)` from `GlobalNav` on mobile view only, while fully keeping `(Contact)` on the `HeroSection` on mobile and desktop.
 
 ---
 
@@ -165,6 +167,7 @@ Total public/ size: ~10.8 MB. All filenames are kebab-case (no spaces, no specia
 - **Deploy**: Live on Vercel at https://adrz-26.vercel.app
 - **Analytics**: Vercel Analytics active (`@vercel/analytics/next` in layout.tsx).
 - **All pages**: Hero, Page 2, Page 3, Page 4, GlobalNav, AboutCard — fully responsive.
-- **Mobile**: No text clipping, native touch scroll responsiveness, throttled WebGL/video resource usage.
-- **Desktop**: 100% untouched — perfect 1.2s scroll feel, zoom-resilient layout, 3D interactions.
+- **Mobile**: `CylinderCarousel` on Page 2 with 6 WebP posters, native touch momentum, zero video decoder overhead.
+- **Desktop**: 100% untouched — full cinematic WebGL `LiquidGlassCarousel` with 6 interactive video cards and edge blurs.
 - **Assets**: All images (.webp) and videos (.webm) production-ready with clean filenames.
+

@@ -35,9 +35,9 @@ export default function GlobalNav({
 
     const getMetrics = () => {
       const isDesktop = window.innerWidth >= 768;
-      const targetScale = isDesktop ? 0.22 : 0.32;
-      const targetX = isDesktop ? 18 : 12;
-      const targetY = isDesktop ? 12 : 12;
+      const targetScale = isDesktop ? 0.22 : 0.50;
+      const targetX = isDesktop ? 18 : 14;
+      const targetY = isDesktop ? 12 : 14;
       const heroEl = document.getElementById("hero-main-title");
       const heroRect = heroEl ? heroEl.getBoundingClientRect() : null;
       const heroX = heroRect ? heroRect.left : (window.innerWidth - titleWrapper.offsetWidth) / 2;
@@ -48,7 +48,7 @@ export default function GlobalNav({
       const titleCenterY = targetY + (scaledTitleHeight / 2);
 
       // Exact Y offset for right nav so its centerline aligns perfectly inline with titleCenterY
-      const navHeight = rightNav.offsetHeight || 20;
+      const navHeight = rightNav.offsetHeight || 24;
       const rightNavY = titleCenterY - (navHeight / 2);
 
       return {
@@ -186,10 +186,10 @@ export default function GlobalNav({
           </h1>
         </div>
 
-        {/* Right Navigation - Desktop shows DESIGN — FOLIO, (CONTACT), (ABOUT); Mobile shows (CONTACT), (ABOUT) */}
+        {/* Right Navigation - Desktop shows DESIGN — FOLIO, (CONTACT), (ABOUT); Mobile shows (ABOUT) */}
         <nav 
           ref={rightNavRef}
-          className="absolute top-0 right-3 sm:right-4 md:right-6 pointer-events-auto flex items-center gap-4 sm:gap-6 md:gap-8 opacity-0 text-[#080808]"
+          className="absolute top-0 right-4 sm:right-5 md:right-6 pointer-events-auto flex items-center gap-4 sm:gap-6 md:gap-8 opacity-0 text-[#080808]"
           aria-label="Main Navigation"
         >
           <div className="hidden md:inline-block">
@@ -197,16 +197,16 @@ export default function GlobalNav({
               label="DESIGN — FOLIO"
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
+              className="font-mono text-sm md:text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
             />
           </div>
-          <div className="inline-block">
+          <div className="hidden md:inline-block">
             <a href="mailto:adarshpathade79@gmail.com" className="inline-block text-current">
               <LetterSwapPingPong
                 label="(Contact)"
                 staggerFrom="first"
                 reverse={false}
-                className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
+                className="font-mono text-sm md:text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
               />
             </a>
           </div>
@@ -215,7 +215,7 @@ export default function GlobalNav({
               label={isAboutOpen ? "(Close)" : "(About)"}
               staggerFrom="first"
               reverse={false}
-              className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
+              className="font-mono text-xs md:text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity text-current"
               onClick={onToggleAbout}
             />
           </div>

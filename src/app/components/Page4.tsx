@@ -9,7 +9,7 @@ interface Page4Props {
 }
 
 const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
-  { scrollTriggerTrigger = "#main-scroll-container" },
+  _props,
   ref
 ) {
   return (
@@ -36,7 +36,7 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
       </div>
 
       {/* Main Content Layer with mix-blend-difference — exactly as in Hero */}
-      <div className="relative z-20 mix-blend-difference w-full h-full min-h-screen flex flex-col justify-between items-center px-4 sm:px-8 md:px-12 pt-[6vh] pb-[3vh] pointer-events-none text-white max-w-[1600px] mx-auto">
+      <div className="relative z-20 mix-blend-difference w-full h-full min-h-screen flex flex-col justify-between items-center px-4 sm:px-8 md:px-12 pt-[6vh] pb-[max(4vh,env(safe-area-inset-bottom,20px))] pointer-events-none text-white max-w-[1600px] mx-auto">
         
         {/* Top spacer for GlobalNav clearance */}
         <div className="w-full shrink-0 h-4 sm:h-6" />
@@ -44,9 +44,9 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
         {/* Center Hero Block — Minimal Kinetic Focus */}
         <div className="w-full flex flex-col items-center justify-center my-auto py-4 pointer-events-auto select-none">
           
-          {/* Refined Headline */}
-          <p className="text-[clamp(1rem,1.8vw,2.6vh)] font-[450] tracking-tight uppercase text-white/90 text-center max-w-2xl px-4 leading-snug">
-            Got a project? Let’s make something great.
+          {/* Refined Headline — single line on all screen sizes */}
+          <p className="text-[clamp(0.75rem,2.4vw,1.1rem)] font-[450] tracking-tight uppercase text-white/90 text-center whitespace-nowrap px-4 leading-snug">
+            Got a project? Let’s talk.
           </p>
 
           {/* Massive Display Title: Hero of the Footer */}
@@ -78,52 +78,51 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
           </div>
         </div>
 
-        {/* Bottom Editorial Bar: 4 Scattered Items Across Viewport */}
-        <div className="w-full grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-3 sm:gap-6 pointer-events-auto select-none text-white shrink-0 pt-4">
-          {/* 1. Designer / Developer Credit */}
-          <div className="text-left shrink-0">
-            <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal leading-tight uppercase text-white/70">
-              DESIGN &amp; DEV BY ADARSH
-            </p>
-          </div>
-
-          {/* 2. LinkedIn Link */}
-          <div className="text-right sm:text-center shrink-0">
+        {/* Bottom Editorial Bar: Tightly grouped links, distinct gap, tightly grouped credits on mobile */}
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center sm:justify-between pointer-events-auto select-none text-white shrink-0 pt-4 pb-[max(2vh,env(safe-area-inset-bottom,12px))] text-center sm:text-left">
+          {/* Group 1 (Mobile Top, Desktop Center): Nav Links (LinkedIn & GitHub) closely spaced */}
+          <div className="order-1 sm:order-2 flex flex-col sm:flex-row items-center gap-1 sm:gap-8 shrink-0">
             <a
               href="https://www.linkedin.com/in/adarzhpathade"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-white transition-opacity hover:opacity-80"
+              className="inline-flex items-center justify-center text-white transition-opacity hover:opacity-80 leading-none"
             >
               <LetterSwapPingPong
                 label="LINKEDIN"
                 staggerFrom="first"
                 reverse={false}
-                className="font-mono text-[clamp(8px,0.85vw,1.35vh)] tracking-normal uppercase cursor-pointer text-white"
+                className="font-mono text-[clamp(11px,2.8vw,13px)] sm:text-[clamp(9px,0.85vw,1.35vh)] tracking-wider uppercase cursor-pointer text-white leading-none"
               />
             </a>
-          </div>
-
-          {/* 3. GitHub Link */}
-          <div className="text-left sm:text-center shrink-0">
             <a
               href="https://github.com/adarzhpathade"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-white transition-opacity hover:opacity-80"
+              className="inline-flex items-center justify-center text-white transition-opacity hover:opacity-80 leading-none"
             >
               <LetterSwapPingPong
                 label="GITHUB"
                 staggerFrom="first"
                 reverse={false}
-                className="font-mono text-[clamp(8px,0.85vw,1.35vh)] tracking-normal uppercase cursor-pointer text-white"
+                className="font-mono text-[clamp(11px,2.8vw,13px)] sm:text-[clamp(9px,0.85vw,1.35vh)] tracking-wider uppercase cursor-pointer text-white leading-none"
               />
             </a>
           </div>
 
-          {/* 4. Editorial Location (Year Removed) */}
-          <div className="text-right shrink-0">
-            <p className="text-[clamp(8px,0.85vw,1.35vh)] font-mono tracking-normal leading-tight uppercase text-white/70">
+          {/* Group 2 (Mobile Bottom, Desktop Left): Designer Credits & Location with distinct gap from nav links */}
+          <div className="order-2 sm:order-1 flex flex-col sm:flex-row items-center gap-1 sm:gap-0 shrink-0 mt-6 sm:mt-0">
+            <p className="text-[clamp(10px,2.6vw,12px)] sm:text-[clamp(9px,0.85vw,1.35vh)] font-mono tracking-normal leading-tight uppercase text-white/70">
+              DESIGN &amp; DEV BY ADARSH
+            </p>
+            <p className="sm:hidden text-[clamp(10px,2.6vw,12px)] font-mono tracking-normal leading-tight uppercase text-white/50">
+              BASED IN INDIA
+            </p>
+          </div>
+
+          {/* Desktop Only: Location on far-right */}
+          <div className="hidden sm:block sm:order-3 text-right shrink-0">
+            <p className="text-[clamp(9px,0.85vw,1.35vh)] font-mono tracking-normal leading-tight uppercase text-white/70">
               BASED IN INDIA
             </p>
           </div>

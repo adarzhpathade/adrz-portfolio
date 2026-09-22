@@ -43,13 +43,13 @@ export default function Home() {
     if (!isPreloaderComplete) {
       document.body.style.overflow = "hidden";
       window.scrollTo(0, 0);
-      (window as any).__lenis?.stop();
+      window.__lenis?.stop();
       window.addEventListener("wheel", preventScroll, { passive: false });
       window.addEventListener("touchmove", preventScroll, { passive: false });
     } else {
       document.body.style.overflow = "";
-      (window as any).__lenis?.start();
-      (window as any).__lenis?.scrollTo(0, { immediate: true });
+      window.__lenis?.start();
+      window.__lenis?.scrollTo(0, { immediate: true });
       ScrollTrigger.refresh();
     }
     return () => {
@@ -58,6 +58,164 @@ export default function Home() {
       window.removeEventListener("touchmove", preventScroll);
     };
   }, [isPreloaderComplete]);
+
+  // Mobile Section Snap / Auto-Scroll: On a little scroll or swipe in mobile view,
+  // automatically and smoothly transitions the whole section to the next/previous state.
+  useEffect(() => {
+    if (typeof window === "undefined" || !isPreloaderComplete || isAboutOpen) return;
+
+    // The key narrative section stops of the portfolio on mobile:
+    // 0.00: Hero Initial (dark cover, title, subtitle)
+    // 0.18: Hero Revealed (shader background active, 3-line statement in focus)
+    // 0.38: Page 2 (Light canvas with 3D Motion Graphics Carousel)
+    // 0.66: Page 3 Projects (3D Cube Projects Gallery)
+    // 0.86: Page 3 Skills (Dark theme #080808 with animated BlurText skills)
+    // 1.00: Page 4 Footer (ReflectShader Contact Section)
+    const SECTIONS = [0.0, 0.18, 0.38, 0.66, 0.86, 1.0];
+    let isTransitioning = false;
+    let transitionTimeout: NodeJS.Timeout | null = null;
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let isTrackingTouch = false;
+
+    const getTargetScrollY = (targetProgress: number) => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      return Math.round(targetProgress * maxScroll);
+    };
+
+    const getCurrentProgress = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll <= 0) return 0;
+      return Math.max(0, Math.min(1, window.scrollY / maxScroll));
+    };
+
+    const scrollToProgress = (targetProgress: number) => {
+      if (isTransitioning) return;
+      isTransitioning = true;
+
+      const targetY = getTargetScrollY(targetProgress);
+      const lenis = window.__lenis;
+
+      if (lenis && typeof lenis.scrollTo === "function") {
+        lenis.scrollTo(targetY, {
+          duration: 1.4,
+          // Silky smooth easeInOutCubic: gentle start, buttery glide, soft deceleration
+          easing: (t: number) =>
+            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+          lock: true,
+        });
+      } else {
+        window.scrollTo({
+          top: targetY,
+          behavior: "smooth",
+        });
+      }
+
+      if (transitionTimeout) clearTimeout(transitionTimeout);
+      transitionTimeout = setTimeout(() => {
+        isTransitioning = false;
+      }, 1450);
+    };
+
+    const goToNextSection = () => {
+      const currentP = getCurrentProgress();
+      // Find the next section ahead of current progress (+ epsilon)
+      const nextSection = SECTIONS.find((s) => s > currentP + 0.03);
+      if (nextSection !== undefined) {
+        scrollToProgress(nextSection);
+      }
+    };
+
+    const goToPrevSection = () => {
+      const currentP = getCurrentProgress();
+      // Find the previous section behind current progress (- epsilon)
+      const prevSections = SECTIONS.filter((s) => s < currentP - 0.03);
+      if (prevSections.length > 0) {
+        const prevSection = prevSections[prevSections.length - 1];
+        scrollToProgress(prevSection);
+      }
+    };
+
+    // Touch event handlers for mobile devices
+    const onTouchStart = (e: TouchEvent) => {
+      if (window.innerWidth >= 768 || e.touches.length !== 1) return;
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      isTrackingTouch = true;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (window.innerWidth >= 768 || !isTrackingTouch || e.touches.length !== 1) return;
+
+      if (isTransitioning) {
+        // Prevent touch interruption during section transition
+        e.preventDefault();
+        return;
+      }
+
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaY = currentY - touchStartY;
+      const deltaX = currentX - touchStartX;
+
+      // If user is dragging horizontally (e.g. spinning the 3D CylinderCarousel on Page 2),
+      // do NOT intercept — let the carousel handle it cleanly
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        isTrackingTouch = false;
+        return;
+      }
+
+      // "On little scroll of the user" — small threshold (22px) detects vertical scroll intent
+      if (Math.abs(deltaY) >= 22) {
+        e.preventDefault();
+        isTrackingTouch = false;
+
+        if (deltaY < 0) {
+          // Swiped UP -> user intends to scroll DOWN to the next section
+          goToNextSection();
+        } else {
+          // Swiped DOWN -> user intends to scroll UP to the previous section
+          goToPrevSection();
+        }
+      }
+    };
+
+    const onTouchEnd = () => {
+      isTrackingTouch = false;
+    };
+
+    // Wheel event handler for mobile-sized viewports (e.g. DevTools emulator or small screens)
+    const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth >= 768) return;
+
+      if (isTransitioning) {
+        e.preventDefault();
+        return;
+      }
+
+      if (Math.abs(e.deltaY) >= 12) {
+        e.preventDefault();
+        if (e.deltaY > 0) {
+          goToNextSection();
+        } else {
+          goToPrevSection();
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      if (transitionTimeout) clearTimeout(transitionTimeout);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("wheel", onWheel);
+    };
+  }, [isPreloaderComplete, isAboutOpen]);
 
   useGSAP(
     () => {

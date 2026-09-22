@@ -9,9 +9,7 @@ import BoxCarousel, {
   type BoxCarouselRef,
   type CarouselItem,
 } from "@/components/fancy/carousel/box-carousel";
-import BlurText, { type TextSegment } from "@/components/react-bits/BlurText";
 import LetterSwapPingPong from "@/components/fancy/text/letter-swap-pingpong-anim";
-import useScreenSize from "@/hooks/use-screen-size";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -51,10 +49,10 @@ const PROJECTS: ProjectData[] = [
 
 // 4 faces of the 3D box cube mapped alternating between the 2 projects
 const carouselItems: CarouselItem[] = [
-  { id: "1", type: "image", src: PROJECTS[0].src, alt: PROJECTS[0].alt },
-  { id: "2", type: "image", src: PROJECTS[1].src, alt: PROJECTS[1].alt },
-  { id: "3", type: "image", src: PROJECTS[0].src, alt: PROJECTS[0].alt },
-  { id: "4", type: "image", src: PROJECTS[1].src, alt: PROJECTS[1].alt },
+  { id: "1", type: "image", src: PROJECTS[0].src, alt: PROJECTS[0].alt, link: PROJECTS[0].link },
+  { id: "2", type: "image", src: PROJECTS[1].src, alt: PROJECTS[1].alt, link: PROJECTS[1].link },
+  { id: "3", type: "image", src: PROJECTS[0].src, alt: PROJECTS[0].alt, link: PROJECTS[0].link },
+  { id: "4", type: "image", src: PROJECTS[1].src, alt: PROJECTS[1].alt, link: PROJECTS[1].link },
 ];
 
 interface SkillItem {
@@ -95,6 +93,13 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
   const safeIndex =
     ((activeIndex % PROJECTS.length) + PROJECTS.length) % PROJECTS.length;
   const activeProject = PROJECTS[safeIndex];
+
+  const handleCubeClick = (item?: CarouselItem) => {
+    const targetLink = item?.link || activeProject?.link;
+    if (targetLink) {
+      window.open(targetLink, "_blank", "noopener,noreferrer");
+    }
+  };
 
   const DEFAULT_DIMENSIONS = { width: 470, height: 275 };
 
@@ -362,9 +367,12 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
   return (
     <section
       ref={(node) => {
-        (sectionRef as any).current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) (ref as any).current = node;
+        sectionRef.current = node;
+        if (typeof ref === "function") {
+          ref(node);
+        } else if (ref && "current" in ref) {
+          (ref as React.RefObject<HTMLElement | null>).current = node;
+        }
       }}
       id="page-3"
       className="relative w-full h-full bg-[#ECECEC] text-[#080808] overflow-hidden select-none flex flex-col justify-between"
@@ -456,7 +464,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
           {/* Center Column: 3D Box Carousel */}
           <div
             ref={galleryWrapperRef}
-            className="shrink-0 flex items-center justify-center order-2 md:order-2 my-3 sm:my-3 md:my-0 pointer-events-auto cursor-grab"
+            className="shrink-0 flex items-center justify-center order-2 md:order-2 my-3 sm:my-3 md:my-0 pointer-events-auto cursor-pointer"
             style={{ opacity: 0 }}
           >
             {mounted ? (
@@ -471,6 +479,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
                 autoPlayInterval={4500}
                 perspective={1000}
                 onIndexChange={setActiveIndex}
+                onItemClick={handleCubeClick}
+                title={`Open ${activeProject.normalText} website`}
               />
             ) : (
               <div

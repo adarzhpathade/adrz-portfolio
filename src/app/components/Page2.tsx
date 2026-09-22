@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import LiquidGlassCarousel from "@/components/originkit/ui/liquid-glass-carousel-custom-style";
+import CylinderCarousel, { type CarouselImage } from "@/components/ui/cylinder-carousel";
 import GradualBlur from "@/components/react-bits/GradualBlur";
 
 if (typeof window !== "undefined") {
@@ -42,24 +43,56 @@ const PORTFOLIO_VIDEOS = [
   },
 ];
 
+const MOBILE_CAROUSEL_IMAGES: CarouselImage[] = [
+  {
+    src: "/images/advance-animations.webp",
+    alt: "Advance Animations",
+  },
+  {
+    src: "/images/coffee-cup.webp",
+    alt: "Coffee Cup",
+  },
+  {
+    src: "/images/human-brain.webp",
+    alt: "Human Brain",
+  },
+  {
+    src: "/images/object-centric-animation-2.webp",
+    alt: "Object Centric Animation",
+  },
+  {
+    src: "/images/text-centric-animation-1.webp",
+    alt: "Text Centric Animation",
+  },
+  {
+    src: "/images/what-you-see.webp",
+    alt: "What You See",
+  },
+];
+
 export default function Page2({
   scrollTriggerTrigger = "#main-scroll-container",
 }: Page2Props) {
   const sectionRef = useRef<HTMLElement>(null);
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const [entryTrigger, setEntryTrigger] = useState(0);
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
 
-  // Proportional dynamic dimensions for LiquidGlassCarousel across zoom levels
+  // Proportional dynamic dimensions for carousels across zoom levels & screen sizes
   const [cardDimensions, setCardDimensions] = useState({ width: 240, height: 390 });
 
   useEffect(() => {
-    const updateCardSize = () => {
+    const updateDimensions = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      if (w < 640) {
-        setCardDimensions({ width: 190, height: 310 });
+      setIsMobile(w < 768);
+
+      if (w < 480) {
+        setCardDimensions({ width: 195, height: 280 });
+      } else if (w < 640) {
+        setCardDimensions({ width: 215, height: 310 });
       } else if (w < 768) {
-        setCardDimensions({ width: 220, height: 350 });
+        setCardDimensions({ width: 235, height: 340 });
       } else {
         const aspect = 240 / 390;
         let targetHeight = Math.round(Math.min(h * 0.44, (w * 0.28) / aspect));
@@ -68,9 +101,9 @@ export default function Page2({
         setCardDimensions({ width: targetWidth, height: targetHeight });
       }
     };
-    updateCardSize();
-    window.addEventListener("resize", updateCardSize);
-    return () => window.removeEventListener("resize", updateCardSize);
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
   useGSAP(
@@ -137,48 +170,63 @@ export default function Page2({
       >
         {/* Scaled-down & shifted-up Carousel container */}
         <div className="w-full h-full flex items-center justify-center translate-y-0 sm:-translate-y-6 pt-14 sm:pt-14 pb-14 sm:pb-12">
-          <LiquidGlassCarousel
-            items={PORTFOLIO_VIDEOS}
-            background="#ECECEC"
-            cardWidth={cardDimensions.width}
-            cardHeight={cardDimensions.height}
-            gap={Math.round(cardDimensions.width * 0.125)}
-            curved={true}
-            cornerRadius={18}
-            entryTrigger={entryTrigger}
-            entry={{
-              enabled: true,
-              enterFrom: "bottom",
-              transition: {
-                duration: 1.0,
-                ease: [0.25, 1, 0.5, 1],
-              },
-            }}
-            autoScroll={{
-              enabled: true,
-              speed: 65,
-              resumeDelay: 1000,
-            }}
-            motion={{
-              snap: false,
-              glide: 6.8,
-              sensitivity: 6.0,
-            }}
-            lens={{
-              enabled: false,
-              shape: "square",
-              width: 0.55,
-              height: 0.75,
-              rotation: 15,
-              dispersion: 6,
-              ringColor: "rgba(0, 0, 0, 0.08)",
-            }}
-            interaction={{
-              drag: true,
-              wheel: false,
-              clickToFocus: true,
-            }}
-          />
+          {isMobile ? (
+            /* Lightweight CSS 3D Cylinder Carousel on Mobile (0% WebGL, 0% video decoding) */
+            <div className="w-full flex items-center justify-center -translate-y-1">
+              <CylinderCarousel
+                images={MOBILE_CAROUSEL_IMAGES}
+                cardWidth={cardDimensions.width}
+                animationDuration={28}
+                face="concave"
+                curve="subtle"
+                cardClassName="shadow-[0_12px_28px_rgba(0,0,0,0.14)] border border-black/10"
+              />
+            </div>
+          ) : isMobile === false ? (
+            /* Full Cinematic WebGL LiquidGlassCarousel on Desktop */
+            <LiquidGlassCarousel
+              items={PORTFOLIO_VIDEOS}
+              background="#ECECEC"
+              cardWidth={cardDimensions.width}
+              cardHeight={cardDimensions.height}
+              gap={Math.round(cardDimensions.width * 0.125)}
+              curved={true}
+              cornerRadius={18}
+              entryTrigger={entryTrigger}
+              entry={{
+                enabled: true,
+                enterFrom: "bottom",
+                transition: {
+                  duration: 1.0,
+                  ease: [0.25, 1, 0.5, 1],
+                },
+              }}
+              autoScroll={{
+                enabled: true,
+                speed: 65,
+                resumeDelay: 1000,
+              }}
+              motion={{
+                snap: false,
+                glide: 6.8,
+                sensitivity: 6.0,
+              }}
+              lens={{
+                enabled: false,
+                shape: "square",
+                width: 0.55,
+                height: 0.75,
+                rotation: 15,
+                dispersion: 6,
+                ringColor: "rgba(0, 0, 0, 0.08)",
+              }}
+              interaction={{
+                drag: true,
+                wheel: false,
+                clickToFocus: true,
+              }}
+            />
+          ) : null}
         </div>
 
         {/* Bottom bio / description — 3 balanced lines on mobile, 2 lines on desktop */}
@@ -198,39 +246,43 @@ export default function Page2({
         </div>
       </div>
 
-      {/* Left Edge Subtle Gradual Blur */}
-      <GradualBlur
-        target="parent"
-        position="left"
-        width="6rem"
-        mobileWidth="2.5rem"
-        tabletWidth="4.5rem"
-        desktopWidth="6.5rem"
-        responsive={true}
-        strength={0.9}
-        divCount={4}
-        curve="ease-in"
-        exponential={false}
-        opacity={0.8}
-        zIndex={30}
-      />
+      {/* Left Edge Subtle Gradual Blur (Desktop Only to save mobile GPU compositor load) */}
+      {!isMobile && (
+        <GradualBlur
+          target="parent"
+          position="left"
+          width="6rem"
+          mobileWidth="2.5rem"
+          tabletWidth="4.5rem"
+          desktopWidth="6.5rem"
+          responsive={true}
+          strength={0.9}
+          divCount={4}
+          curve="ease-in"
+          exponential={false}
+          opacity={0.8}
+          zIndex={30}
+        />
+      )}
 
-      {/* Right Edge Subtle Gradual Blur */}
-      <GradualBlur
-        target="parent"
-        position="right"
-        width="6rem"
-        mobileWidth="2.5rem"
-        tabletWidth="4.5rem"
-        desktopWidth="6.5rem"
-        responsive={true}
-        strength={0.9}
-        divCount={4}
-        curve="ease-in"
-        exponential={false}
-        opacity={0.8}
-        zIndex={30}
-      />
+      {/* Right Edge Subtle Gradual Blur (Desktop Only to save mobile GPU compositor load) */}
+      {!isMobile && (
+        <GradualBlur
+          target="parent"
+          position="right"
+          width="6rem"
+          mobileWidth="2.5rem"
+          tabletWidth="4.5rem"
+          desktopWidth="6.5rem"
+          responsive={true}
+          strength={0.9}
+          divCount={4}
+          curve="ease-in"
+          exponential={false}
+          opacity={0.8}
+          zIndex={30}
+        />
+      )}
     </section>
   );
 }
