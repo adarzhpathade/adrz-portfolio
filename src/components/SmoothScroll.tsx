@@ -11,15 +11,18 @@ export default function SmoothScroll({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+
     const lenis = new Lenis({
-      duration: 1.5,
+      duration: isMobile ? 0.8 : 1.5,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 0.9,
-      touchMultiplier: 2,
+      touchMultiplier: isMobile ? 2.5 : 2,
       syncTouch: true,
+      ...(isMobile && { syncTouchLerp: 0.075 }),
     });
 
     if (typeof window !== "undefined") {

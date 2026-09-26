@@ -78,7 +78,7 @@ export default function Home() {
 
       const updateThemeColor = (p: number, isMobileTimeline: boolean) => {
         const isDark = isMobileTimeline 
-          ? (p < 0.22 || p >= 0.60)
+          ? (p < 0.20 || p >= 0.55)
           : (p < 0.24 || p >= 0.74);
           
         setIsDarkTheme(isDark);
@@ -115,22 +115,22 @@ export default function Home() {
 
               if (window.__lenis) {
                 // Hero to Projects auto-scroll on mobile
-                if (self.direction === 1 && p > 0.22 && p < 0.28 && !autoScrollRef.current.mobileProjectsTriggered) {
+                if (self.direction === 1 && p > 0.20 && p < 0.26 && !autoScrollRef.current.mobileProjectsTriggered) {
                   autoScrollRef.current.mobileProjectsTriggered = true;
                   const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-                  window.__lenis.scrollTo(maxScroll * 0.32, { duration: 1.2 }); 
+                  window.__lenis.scrollTo(maxScroll * 0.30, { duration: 0.9 }); 
                 }
-                if (self.direction === -1 && p < 0.15) {
+                if (self.direction === -1 && p < 0.13) {
                   autoScrollRef.current.mobileProjectsTriggered = false;
                 }
 
-                // Projects to Skills auto-scroll on mobile for an easy, smooth transition
-                if (self.direction === 1 && p > 0.55 && p < 0.61 && !autoScrollRef.current.mobileSkillsTriggered) {
+                // Projects to Skills auto-scroll on mobile — fires earlier so user doesn't have to scroll forever
+                if (self.direction === 1 && p > 0.42 && p < 0.50 && !autoScrollRef.current.mobileSkillsTriggered) {
                   autoScrollRef.current.mobileSkillsTriggered = true;
                   const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-                  window.__lenis.scrollTo(maxScroll * 0.66, { duration: 1.2 }); 
+                  window.__lenis.scrollTo(maxScroll * 0.64, { duration: 0.9 }); 
                 }
-                if (self.direction === -1 && p < 0.48) {
+                if (self.direction === -1 && p < 0.36) {
                   autoScrollRef.current.mobileSkillsTriggered = false;
                 }
               }

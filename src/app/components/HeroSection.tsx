@@ -202,14 +202,14 @@ export default function HeroSection({
             initial={{ opacity: 0 }}
             animate={{ opacity: isReady ? 1 : 0 }}
             transition={{ delay: 0.15, duration: 0.7 }}
-            className="flex items-center gap-8 mt-4 md:mt-0 md:absolute md:inset-0 md:w-full md:px-8 lg:px-16 md:justify-between pointer-events-none z-20"
+            className="flex items-center justify-between w-full px-5 mt-3 md:mt-0 md:absolute md:inset-0 md:px-8 lg:px-16 md:justify-between pointer-events-none z-20"
           >
             <div ref={aboutRef} className="pointer-events-auto">
               <LetterSwapPingPong
                 label={isAboutOpen ? "(Close)" : "(About)"}
                 staggerFrom="first"
                 reverse={false}
-                className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity"
+                className="font-mono text-[11px] md:text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity"
                 onClick={onToggleAbout}
               />
             </div>
@@ -219,7 +219,7 @@ export default function HeroSection({
                   label="(Contact)"
                   staggerFrom="first"
                   reverse={false}
-                  className="font-mono text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity"
+                  className="font-mono text-[11px] md:text-[clamp(9px,0.85vw,1.3vh)] tracking-wider uppercase cursor-pointer transition-opacity"
                 />
               </a>
             </div>
