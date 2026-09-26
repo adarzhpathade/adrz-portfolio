@@ -183,9 +183,9 @@ export default function AboutCard({ isOpen, onClose, isDark = true }: AboutCardP
                   {/* Main Bio Text: Dynamic hover elevation with highlighted key terms */}
                   <motion.div 
                     style={{ z: zElevate }}
-                    className="space-y-6 will-change-transform [transform-style:preserve-3d]"
+                    className="space-y-4 will-change-transform [transform-style:preserve-3d]"
                   >
-                    <p className={`font-sans text-[13px] sm:text-[14px] md:text-[14.5px] font-[450] leading-relaxed tracking-tight uppercase ${t.body1}`}>
+                    <p className={`font-sans text-[11px] sm:text-[12px] md:text-[12.5px] font-[450] leading-relaxed tracking-tight uppercase ${t.body1}`}>
                       <span className={t.highlightedTerm}>
                         ADARSH PATHADE
                       </span>{" "}
@@ -199,14 +199,14 @@ export default function AboutCard({ isOpen, onClose, isDark = true }: AboutCardP
                       </span>{" "}
                       FOCUSED ON DIGITAL EXPERIENCES, MOTION, AND CREATIVE DEVELOPMENT.
                     </p>
-                    <p className={`font-sans text-[13px] sm:text-[14px] md:text-[14.5px] font-[450] leading-relaxed tracking-tight uppercase ${t.body2}`}>
+                    <p className={`font-sans text-[11px] sm:text-[12px] md:text-[12.5px] font-[450] leading-relaxed tracking-tight uppercase ${t.body2}`}>
                       WITH A STRONG EYE FOR VISUAL DESIGN AND INTERACTION, HE BUILDS MODERN WEBSITES THAT BLEND DESIGN WITH CODE. HIS WORK FOCUSES ON CLEAN INTERFACES, SMOOTH ANIMATIONS, AND IMMERSIVE DIGITAL EXPERIENCES.
                     </p>
                   </motion.div>
                 </div>
 
                 {/* Lower Meta Sections: Layered 3D hierarchy */}
-                <div className={`mt-8 sm:mt-12 space-y-6 pt-6 border-t [transform-style:preserve-3d] ${t.border}`}>
+                <div className={`mt-6 sm:mt-8 space-y-5 pt-5 border-t [transform-style:preserve-3d] ${t.border}`}>
                   {/* EDUCATION Section */}
                   <div className="[transform-style:preserve-3d]">
                     <h4 className={`font-mono text-[9px] sm:text-[10px] tracking-widest uppercase mb-2.5 [transform:translateZ(12px)] ${t.sectionLabel}`}>
@@ -243,6 +243,25 @@ export default function AboutCard({ isOpen, onClose, isDark = true }: AboutCardP
                       <p>GSAP / FRAMER MOTION</p>
                       <p>After Effects</p>
                       <p>Premiere Pro</p>
+                    </motion.div>
+                  </div>
+
+                  {/* RESUME Section */}
+                  <div className="[transform-style:preserve-3d]">
+                    <h4 className={`font-mono text-[9px] sm:text-[10px] tracking-widest uppercase mb-2.5 [transform:translateZ(12px)] ${t.sectionLabel}`}>
+                      RESUME
+                    </h4>
+                    <motion.div 
+                      style={{ z: zElevate }}
+                      className={`font-mono text-[11px] sm:text-xs uppercase tracking-normal will-change-transform ${t.skills}`}
+                    >
+                      <a 
+                        href="/Adarsh Pathade CV.pdf" 
+                        download="Adarsh Pathade CV.pdf"
+                        className="inline-block hover:opacity-60 transition-opacity cursor-pointer underline underline-offset-4 decoration-current/30 hover:decoration-current/80"
+                      >
+                        DOWNLOAD PDF
+                      </a>
                     </motion.div>
                   </div>
                 </div>

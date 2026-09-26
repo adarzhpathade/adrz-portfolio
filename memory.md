@@ -42,7 +42,7 @@ src/
 │   │   ├── Page3.tsx         ← 3D BoxCarousel with click-to-redirect, skills typography & blur exit transitions
 │   │   ├── Page4.tsx         ← footer / contact with interactive TechText "LET'S CREATE." wordmark & Gestalt colophon
 │   │   ├── GlobalNav.tsx     ← fixed nav with scroll-driven animations & responsive branding
-│   │   └── AboutCard.tsx     ← 3D floating drawer (light/dark adaptive)
+│   │   └── AboutCard.tsx     ← 3D floating drawer (light/dark adaptive) with Resume download link
 │   ├── globals.css           ← global styles, scrollbar hiding, overscroll bounce prevention
 │   ├── layout.tsx            ← font loading, metadata (PWA standalone), viewport, Analytics
 │   └── page.tsx              ← main orchestrator (scroll scrub, desktop/mobile auto-scroll, dynamic theme-color)
@@ -96,7 +96,12 @@ src/
 ### 4. Cinematic Transitions & Effects
 - **Blur Exit (`Page3.tsx`)**: Upgraded the exit transitions on the Projects section (heading, bio text, and 3D cube) so that as they fade out, they simultaneously blur from `0px` to `12px`, creating an elegant depth-of-field transition into the Skills section.
 
-### 5. Mobile Performance & Battery Optimization
+### 5. Floating About Card (`AboutCard.tsx`)
+- 3D-tilting drawer overlay with responsive layout (side-docked on desktop, full-width on mobile).
+- Integrated direct Resume download (`Adarsh Pathade CV.pdf`) natively into the component structure.
+- Resolved layout overflow by scaling down the typography hierarchy and stacking `EDUCATION`, `SKILLS`, and `RESUME` compactly without scroll bleed.
+
+### 6. Mobile Performance & Battery Optimization
 - **`ReflectShader` Visibility Gating (`reflect-shader.tsx`)**:
   - Resolved with an `IntersectionObserver` that terminates the rAF loop (`raf = 0`) when the canvas leaves viewport, and safely restarts (`startLoop()`) upon re-entry.
 - **`LiquidGlassCarousel` Visibility Gating (`liquid-glass-carousel-custom-style.tsx`)**:
