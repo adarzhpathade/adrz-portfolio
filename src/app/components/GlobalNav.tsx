@@ -61,13 +61,15 @@ export default function GlobalNav({
       };
     };
 
+    const isDesktop = window.innerWidth >= 768;
+
     // Timeline synced with the master scroll sequence
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: scrollTriggerTrigger,
         start: "top top",
         end: "+=600%",
-        scrub: 1,
+        scrub: isDesktop ? 0.6 : 0.35,
         invalidateOnRefresh: true,
       },
     });
@@ -122,7 +124,10 @@ export default function GlobalNav({
       0.24
     );
 
-    // 0.72 -> 0.80: Transition to Dark Section
+    const darkStart = isDesktop ? 0.72 : 0.58;
+    const darkDuration = isDesktop ? 0.04 : 0.05;
+
+    // Transition to Dark Section (0.58 on mobile, 0.72 on desktop)
     // Nav remains in its exact pinned position,
     // typography smoothly transitions back to pure white (#FFFFFF) for dark background & Page 4
     tl.to(
@@ -130,9 +135,9 @@ export default function GlobalNav({
       {
         color: "#FFFFFF",
         ease: "power1.inOut",
-        duration: 0.08,
+        duration: darkDuration,
       },
-      0.72
+      darkStart
     );
 
     tl.to(
@@ -140,9 +145,9 @@ export default function GlobalNav({
       {
         color: "#FFFFFF",
         ease: "power1.inOut",
-        duration: 0.08,
+        duration: darkDuration,
       },
-      0.72
+      darkStart
     );
 
     // Explicitly anchor timeline total duration to 1.0 so nav remains pinned in position

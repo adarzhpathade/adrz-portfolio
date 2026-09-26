@@ -115,29 +115,74 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
 
     const checkReadiness = async () => {
       try {
-        // Wait for window load
-        if (document.readyState !== "complete") {
+        // 1. Wait for document and window load state
+        if (typeof document !== "undefined" && document.readyState !== "complete") {
           await new Promise<void>((resolve) => {
-            window.addEventListener("load", () => resolve(), { once: true });
+            const onReady = () => {
+              window.removeEventListener("load", onReady);
+              document.removeEventListener("DOMContentLoaded", onReady);
+              resolve();
+            };
+            window.addEventListener("load", onReady, { once: true });
+            document.addEventListener("DOMContentLoaded", onReady, { once: true });
           });
         }
 
-        // Wait for custom fonts to be decoded and ready
-        if (document.fonts) {
+        // 2. Wait for custom typography fonts to decode and render
+        if (typeof document !== "undefined" && document.fonts) {
           await document.fonts.ready;
         }
 
-        // Wait for all critical DOM images
-        const images = Array.from(document.images);
-        await Promise.all(
-          images.map((img) => {
-            if (img.complete) return Promise.resolve();
-            return new Promise((res) => {
-              img.onload = res;
-              img.onerror = res;
-            });
-          })
-        );
+        // 3. Explicitly preload critical project portfolio images
+        const criticalImages = [
+          "/images/sentinel-terminal.webp",
+          "/images/adarsh-26.webp",
+        ];
+
+        const preloadImg = (src: string) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.src = src;
+            if (img.complete) return resolve();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+
+        await Promise.all(criticalImages.map(preloadImg));
+
+        // 4. Wait for all DOM images
+        if (typeof document !== "undefined") {
+          const images = Array.from(document.images);
+          await Promise.all(
+            images.map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((res) => {
+                img.onload = res;
+                img.onerror = res;
+              });
+            })
+          );
+        }
+
+        // 5. On Desktop: warm up initial Page 2 showcase videos in cache
+        if (typeof window !== "undefined" && window.innerWidth >= 768) {
+          const desktopVideos = [
+            "/videos/advance-animations.webm",
+            "/videos/coffee-cup.webm",
+            "/videos/human-brain.webm",
+          ];
+          desktopVideos.forEach((src) => {
+            try {
+              const v = document.createElement("video");
+              v.preload = "metadata";
+              v.src = src;
+              v.muted = true;
+              v.load();
+            } catch {
+              // ignore
+            }
+          });
+        }
       } catch (err) {
         console.warn("Preloader asset check warning:", err);
       } finally {
@@ -147,10 +192,10 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
 
     checkReadiness();
 
-    // Fallback safety: ensure assetsLoaded is true after 3.5s maximum
+    // Fallback safety: ensure assetsLoaded is true after 3.2s maximum
     const safetyTimer = setTimeout(() => {
       assetsLoaded = true;
-    }, 3500);
+    }, 3200);
 
     // 2. Smooth Numerical Progress Animation
     let animFrame = 0;
@@ -222,6 +267,10 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
     });
   }, []);
 
+  const isMobileClient = typeof window !== "undefined" ? window.innerWidth < 768 : false;
+  const clientInitialY = isMobileClient ? "44vh" : "43.5vh";
+  const clientInitialScale = isMobileClient ? 0.70 : 0.62;
+
   return (
     <div
       ref={containerRef}
@@ -243,7 +292,7 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
               ref={titleRef}
               className="z-20 text-center flex items-center justify-center select-none pointer-events-none"
               style={{
-                transform: "translateY(43.5vh) scale(0.62)",
+                transform: `translateY(${clientInitialY}) scale(${clientInitialScale})`,
                 transformOrigin: "center center",
                 willChange: "transform",
               }}

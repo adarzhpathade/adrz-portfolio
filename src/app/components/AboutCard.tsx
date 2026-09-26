@@ -23,7 +23,9 @@ const springValues: SpringOptions = {
 
 export default function AboutCard({ isOpen, onClose, isDark = true }: AboutCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
 
   // TiltedCard Spring Motion Values
   const rotateX = useSpring(useMotionValue(0), springValues);

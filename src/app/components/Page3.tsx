@@ -96,7 +96,17 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
 
   const handleCubeClick = (item?: CarouselItem) => {
     const targetLink = item?.link || activeProject?.link;
-    if (targetLink) {
+    if (!targetLink) return;
+
+    try {
+      const a = document.createElement("a");
+      a.href = targetLink;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
       window.open(targetLink, "_blank", "noopener,noreferrer");
     }
   };
@@ -151,6 +161,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
       const contentWrapper = contentWrapperRef.current;
       const projectsHeading = projectsHeadingRef.current;
       const section = sectionRef.current;
+      const skillsContainer = skillsContainerRef.current;
       if (!galleryWrapper) return;
 
       // Start initially hidden below the viewport tilted in 3D space
@@ -173,193 +184,312 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         gsap.set(rightInfo, { opacity: 0, y: 30, filter: "blur(8px)" });
       }
 
-      let hasEntered = false;
-      const skillsContainer = skillsContainerRef.current;
+      const mm = gsap.matchMedia();
 
-      // Entrance choreography: 3D cube and info reveal when Page 3 arrives (progress 0.58+)
-      ScrollTrigger.create({
-        trigger: scrollTriggerTrigger,
-        start: "top top",
-        end: "+=600%",
-        onUpdate: (self) => {
-          // Trigger when Page 3 is active in the viewport (progress >= 0.58 and < 0.72)
-          if (self.progress >= 0.58 && self.progress < 0.72) {
-            galleryWrapper.style.pointerEvents = "auto";
-            if (contentWrapper) contentWrapper.style.pointerEvents = "auto";
-            if (skillsContainer) skillsContainer.style.pointerEvents = "none";
-            if (!hasEntered) {
-              hasEntered = true;
-              gsap.to(galleryWrapper, {
-                y: 0,
-                rotateX: 0,
-                rotateY: 0,
-                rotateZ: 0,
-                scale: 1,
-                opacity: 1,
-                duration: 1.35,
-                ease: "power2.out",
-                overwrite: "auto",
-              });
+      // ==========================================
+      // MOBILE TIMELINE (< 768px)
+      // Page 2 is skipped. Page 3 projects active 0.28 -> 0.58.
+      // Crisp crossfade: Projects fade out 0.58 -> 0.63, background darkens 0.58 -> 0.63.
+      // Skills fade in 0.63 -> 0.67 against pure black (zero text overlap, zero blank void).
+      // Skills active 0.67 -> 0.92. Curtain lifts 0.92 -> 1.00.
+      // ==========================================
+      mm.add("(max-width: 767px)", () => {
+        let hasEnteredMobile = false;
 
-              if (leftInfo && rightInfo) {
-                gsap.to([leftInfo, rightInfo], {
-                  opacity: 1,
-                  y: 0,
-                  filter: "blur(0px)",
-                  duration: 1.1,
-                  delay: 0.15,
-                  ease: "power2.out",
-                  overwrite: "auto",
-                });
-              }
-            }
-          } else if (self.progress < 0.50) {
-            // Reset when user scrolls back up toward Page 2
-            if (hasEntered) {
-              hasEntered = false;
-              galleryWrapper.style.pointerEvents = "none";
-              if (contentWrapper) contentWrapper.style.pointerEvents = "none";
-              gsap.to(galleryWrapper, {
-                y: 140,
-                rotateX: 22,
-                rotateY: -32,
-                rotateZ: -5,
-                scale: 0.82,
-                opacity: 0,
-                duration: 0.45,
-                overwrite: "auto",
-              });
-
-              if (leftInfo && rightInfo) {
-                gsap.to([leftInfo, rightInfo], {
-                  opacity: 0,
-                  y: 30,
-                  filter: "blur(8px)",
-                  duration: 0.4,
-                  overwrite: "auto",
-                });
-              }
-            }
-          } else if (self.progress >= 0.72) {
-            galleryWrapper.style.pointerEvents = "none";
-            if (contentWrapper) contentWrapper.style.pointerEvents = "none";
-          }
-
-          // Trigger BlurText for the 5 skills ONLY after projects are 100% faded out (progress >= 0.83 and < 0.93)
-          if (self.progress >= 0.83 && self.progress < 0.93) {
-            setSkillsInView((prev) => (!prev ? true : prev));
-          } else if (self.progress < 0.81) {
-            setSkillsInView((prev) => (prev ? false : prev));
-          } else if (self.progress >= 0.93) {
-            // Disable pointer events during curtain reveal to Page 4
-            setSkillsInView(false);
-          }
-        },
-      });
-
-      const isMobile = window.innerWidth < 768;
-      // Scrubbed exit transition into dark canvas (0.72 -> 0.80)
-      const exitTl = gsap.timeline({
-        scrollTrigger: {
+        ScrollTrigger.create({
           trigger: scrollTriggerTrigger,
           start: "top top",
           end: "+=600%",
-          scrub: isMobile ? 0.35 : 1,
-          invalidateOnRefresh: true,
-        },
+          onUpdate: (self) => {
+            const p = self.progress;
+
+            // Projects active range: 0.28 to 0.58
+            if (p >= 0.28 && p < 0.58) {
+              galleryWrapper.style.pointerEvents = "auto";
+              if (contentWrapper) contentWrapper.style.pointerEvents = "auto";
+              if (skillsContainer) skillsContainer.style.pointerEvents = "none";
+              if (!hasEnteredMobile) {
+                hasEnteredMobile = true;
+                gsap.to(galleryWrapper, {
+                  y: 0,
+                  rotateX: 0,
+                  rotateY: 0,
+                  rotateZ: 0,
+                  scale: 1,
+                  opacity: 1,
+                  duration: 0.8,
+                  ease: "power2.out",
+                  overwrite: "auto",
+                });
+
+                if (leftInfo && rightInfo) {
+                  gsap.to([leftInfo, rightInfo], {
+                    opacity: 1,
+                    y: 0,
+                    filter: "blur(0px)",
+                    duration: 0.7,
+                    delay: 0.08,
+                    ease: "power2.out",
+                    overwrite: "auto",
+                  });
+                }
+              }
+            } else if (p < 0.22) {
+              // Reset when user scrolls back up into Hero
+              if (hasEnteredMobile) {
+                hasEnteredMobile = false;
+                galleryWrapper.style.pointerEvents = "none";
+                if (contentWrapper) contentWrapper.style.pointerEvents = "none";
+                gsap.to(galleryWrapper, {
+                  y: 140,
+                  rotateX: 22,
+                  rotateY: -32,
+                  rotateZ: -5,
+                  scale: 0.82,
+                  opacity: 0,
+                  duration: 0.4,
+                  overwrite: "auto",
+                });
+
+                if (leftInfo && rightInfo) {
+                  gsap.to([leftInfo, rightInfo], {
+                    opacity: 0,
+                    y: 30,
+                    filter: "blur(8px)",
+                    duration: 0.35,
+                    overwrite: "auto",
+                  });
+                }
+              }
+            } else if (p >= 0.58) {
+              galleryWrapper.style.pointerEvents = "none";
+              if (contentWrapper) contentWrapper.style.pointerEvents = "none";
+            }
+
+            // Skills kinetic text trigger: triggers cleanly at 0.63 and stays on through footer curtain
+            if (p >= 0.63) {
+              setSkillsInView(true);
+            } else if (p < 0.58) {
+              setSkillsInView(false);
+            }
+          },
+        });
+
+        // Scrubbed crossfade timeline
+        const exitTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: scrollTriggerTrigger,
+            start: "top top",
+            end: "+=600%",
+            scrub: 0.35,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        // 1. Projects heading fades out cleanly as a single unit (0.58 -> 0.63)
+        if (projectsHeading) {
+          exitTl.fromTo(
+            projectsHeading,
+            { opacity: 1, y: 0 },
+            { opacity: 0, y: -16, ease: "power1.inOut", duration: 0.05 },
+            0.58
+          );
+        }
+
+        // 2. Middle content (cube + left title + right tech tags) fades out (0.58 -> 0.63)
+        if (contentWrapper) {
+          exitTl.fromTo(
+            contentWrapper,
+            { opacity: 1, y: 0, scale: 1 },
+            { opacity: 0, y: -16, scale: 0.96, ease: "power1.inOut", duration: 0.05 },
+            0.58
+          );
+          exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.63);
+        }
+
+        // 3. Top statement fades out (0.58 -> 0.62)
+        if (topStatement) {
+          exitTl.fromTo(
+            topStatement,
+            { opacity: 1, y: 0 },
+            { opacity: 0, y: -10, ease: "power1.inOut", duration: 0.04 },
+            0.58
+          );
+        }
+
+        // 4. Section background smoothly transitions to dark #080808 (0.58 -> 0.63)
+        if (section) {
+          exitTl.fromTo(
+            section,
+            { backgroundColor: "#ECECEC" },
+            { backgroundColor: "#080808", ease: "power1.inOut", duration: 0.05 },
+            0.58
+          );
+        }
+
+        // 5. Skills container fades in against pure black (0.63 -> 0.67) — zero overlap with projects
+        if (skillsContainer) {
+          exitTl.fromTo(
+            skillsContainer,
+            { opacity: 0, y: 16 },
+            { opacity: 1, y: 0, ease: "power2.out", duration: 0.04 },
+            0.63
+          );
+          exitTl.set(skillsContainer, { pointerEvents: "auto" }, 0.63);
+        }
+
+        exitTl.set({}, {}, 1.0);
       });
 
-      // Bottom "PROJECTS" heading fades out completely between 0.72 and 0.79
-      const blurLetters = projectsHeading?.querySelectorAll(".blur-text-letter");
-      if (blurLetters && blurLetters.length > 0) {
-        exitTl.fromTo(
-          blurLetters,
-          {
-            opacity: 1,
-            filter: "blur(0px)",
-            color: "#080808",
-            y: 0,
-          },
-          {
-            opacity: 0,
-            filter: "blur(20px)",
-            color: "#FFFFFF",
-            y: -36,
-            stagger: {
-              each: 0.006,
-              from: "start",
-              ease: "power1.inOut",
-            },
-            ease: "power2.in",
-            duration: 0.07,
-          },
-          0.72
-        );
-      }
+      // ==========================================
+      // DESKTOP TIMELINE (>= 768px)
+      // Page 2 active 0.34 -> 0.48. Page 3 enters 0.48 -> 0.62.
+      // Projects active 0.58 -> 0.72.
+      // Crisp crossfade: Projects fade out 0.72 -> 0.76, background darkens 0.72 -> 0.76.
+      // Skills fade in 0.76 -> 0.80.
+      // Skills active 0.80 -> 0.92. Curtain lifts 0.92 -> 1.00.
+      // ==========================================
+      mm.add("(min-width: 768px)", () => {
+        let hasEnteredDesktop = false;
 
-      // Middle content (3D cube, left title, right tech info) wipes out cleanly by 0.79
-      if (contentWrapper) {
-        exitTl.fromTo(
-          contentWrapper,
-          { opacity: 1 },
-          {
-            opacity: 0,
-            ease: "power1.in",
-            duration: 0.07,
-          },
-          0.72
-        );
-        exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.79);
-      }
+        ScrollTrigger.create({
+          trigger: scrollTriggerTrigger,
+          start: "top top",
+          end: "+=600%",
+          onUpdate: (self) => {
+            const p = self.progress;
 
-      // Top statement wipes out cleanly by 0.78
-      if (topStatement) {
-        exitTl.fromTo(
-          topStatement,
-          { opacity: 1 },
-          {
-            opacity: 0,
-            ease: "power1.in",
-            duration: 0.06,
-          },
-          0.72
-        );
-      }
+            // Projects active range: 0.58 to 0.72
+            if (p >= 0.58 && p < 0.72) {
+              galleryWrapper.style.pointerEvents = "auto";
+              if (contentWrapper) contentWrapper.style.pointerEvents = "auto";
+              if (skillsContainer) skillsContainer.style.pointerEvents = "none";
+              if (!hasEnteredDesktop) {
+                hasEnteredDesktop = true;
+                gsap.to(galleryWrapper, {
+                  y: 0,
+                  rotateX: 0,
+                  rotateY: 0,
+                  rotateZ: 0,
+                  scale: 1,
+                  opacity: 1,
+                  duration: 1.2,
+                  ease: "power2.out",
+                  overwrite: "auto",
+                });
 
-      // Section background smoothly transitions from #ECECEC to dark (#080808) by 0.80
-      if (section) {
-        exitTl.fromTo(
-          section,
-          { backgroundColor: "#ECECEC" },
-          {
-            backgroundColor: "#080808",
-            ease: "power1.inOut",
-            duration: 0.08,
-          },
-          0.72
-        );
-      }
+                if (leftInfo && rightInfo) {
+                  gsap.to([leftInfo, rightInfo], {
+                    opacity: 1,
+                    y: 0,
+                    filter: "blur(0px)",
+                    duration: 1.0,
+                    delay: 0.1,
+                    ease: "power2.out",
+                    overwrite: "auto",
+                  });
+                }
+              }
+            } else if (p < 0.50) {
+              if (hasEnteredDesktop) {
+                hasEnteredDesktop = false;
+                galleryWrapper.style.pointerEvents = "none";
+                if (contentWrapper) contentWrapper.style.pointerEvents = "none";
+                gsap.to(galleryWrapper, {
+                  y: 140,
+                  rotateX: 22,
+                  rotateY: -32,
+                  rotateZ: -5,
+                  scale: 0.82,
+                  opacity: 0,
+                  duration: 0.45,
+                  overwrite: "auto",
+                });
 
-      // 5 Skills Center Overlay fades in ONLY at 0.82 (after previous elements are 100% invisible)
-      if (skillsContainer) {
-        exitTl.fromTo(
-          skillsContainer,
-          { opacity: 0, y: 20 },
-          {
-            opacity: 1,
-            y: 0,
-            ease: "power2.out",
-            duration: 0.04,
-          },
-          0.82
-        );
-        exitTl.set(skillsContainer, { pointerEvents: "auto" }, 0.83);
-        // Curtain reveal starts at 0.93 — disable pointer events on skills container
-        exitTl.set(skillsContainer, { pointerEvents: "none" }, 0.93);
-      }
+                if (leftInfo && rightInfo) {
+                  gsap.to([leftInfo, rightInfo], {
+                    opacity: 0,
+                    y: 30,
+                    filter: "blur(8px)",
+                    duration: 0.4,
+                    overwrite: "auto",
+                  });
+                }
+              }
+            } else if (p >= 0.72) {
+              galleryWrapper.style.pointerEvents = "none";
+              if (contentWrapper) contentWrapper.style.pointerEvents = "none";
+            }
 
-      // Anchor timeline duration to 1.0
-      exitTl.set({}, {}, 1.0);
+            if (p >= 0.76) {
+              setSkillsInView(true);
+            } else if (p < 0.70) {
+              setSkillsInView(false);
+            }
+          },
+        });
+
+        // Scrubbed exit transition: 0.72 -> 0.80
+        const exitTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: scrollTriggerTrigger,
+            start: "top top",
+            end: "+=600%",
+            scrub: 0.6,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        // Projects heading fades out smoothly (0.72 -> 0.76)
+        if (projectsHeading) {
+          exitTl.fromTo(
+            projectsHeading,
+            { opacity: 1, y: 0 },
+            { opacity: 0, y: -20, ease: "power1.inOut", duration: 0.04 },
+            0.72
+          );
+        }
+
+        if (contentWrapper) {
+          exitTl.fromTo(
+            contentWrapper,
+            { opacity: 1, y: 0 },
+            { opacity: 0, y: -20, ease: "power1.in", duration: 0.04 },
+            0.72
+          );
+          exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.76);
+        }
+
+        if (topStatement) {
+          exitTl.fromTo(
+            topStatement,
+            { opacity: 1, y: 0 },
+            { opacity: 0, y: -12, ease: "power1.in", duration: 0.04 },
+            0.72
+          );
+        }
+
+        if (section) {
+          exitTl.fromTo(
+            section,
+            { backgroundColor: "#ECECEC" },
+            { backgroundColor: "#080808", ease: "power1.inOut", duration: 0.04 },
+            0.72
+          );
+        }
+
+        if (skillsContainer) {
+          exitTl.fromTo(
+            skillsContainer,
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, ease: "power2.out", duration: 0.04 },
+            0.76
+          );
+          exitTl.set(skillsContainer, { pointerEvents: "auto" }, 0.76);
+        }
+
+        exitTl.set({}, {}, 1.0);
+      });
     },
     { scope: sectionRef, dependencies: [scrollTriggerTrigger] }
   );
@@ -464,7 +594,7 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
           {/* Center Column: 3D Box Carousel */}
           <div
             ref={galleryWrapperRef}
-            className="shrink-0 flex items-center justify-center order-2 md:order-2 my-3 sm:my-3 md:my-0 pointer-events-auto cursor-pointer"
+            className="shrink-0 flex items-center justify-center order-2 md:order-2 my-3 sm:my-3 md:my-0 pointer-events-auto cursor-default"
             style={{ opacity: 0 }}
           >
             {mounted ? (

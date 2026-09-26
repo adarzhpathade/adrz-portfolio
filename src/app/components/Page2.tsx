@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import LiquidGlassCarousel from "@/components/originkit/ui/liquid-glass-carousel-custom-style";
 import GradualBlur from "@/components/react-bits/GradualBlur";
+import useScreenSize from "@/hooks/use-screen-size";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -45,15 +46,16 @@ const PORTFOLIO_VIDEOS = [
 export default function Page2({
   scrollTriggerTrigger = "#main-scroll-container",
 }: Page2Props) {
+  const { isMobile, mounted } = useScreenSize();
   const sectionRef = useRef<HTMLElement>(null);
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const [entryTrigger, setEntryTrigger] = useState(0);
-
 
   // Proportional dynamic dimensions for carousels across zoom levels & screen sizes
   const [cardDimensions, setCardDimensions] = useState({ width: 240, height: 390 });
 
   useEffect(() => {
+    if (isMobile) return;
     const updateDimensions = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -79,6 +81,7 @@ export default function Page2({
 
   useGSAP(
     () => {
+      if (isMobile) return;
       const carouselWrapper = carouselWrapperRef.current;
       if (!carouselWrapper) return;
 
@@ -95,26 +98,27 @@ export default function Page2({
         start: "top top",
         end: "+=600%",
         onUpdate: (self) => {
-          // As soon as Hero starts finishing sliding up and Page 2 is becoming fully visible (around 28%+)
-          if (self.progress >= 0.28 && self.progress < 0.50) {
+          // Trigger cards reveal animation when Hero leaves the screen about 90% (~0.325+)
+          if (self.progress >= 0.325 && self.progress < 0.50) {
             carouselWrapper.style.pointerEvents = "auto";
             if (!hasEntered) {
               hasEntered = true;
               gsap.to(carouselWrapper, {
                 opacity: 1,
-                duration: 0.35,
+                duration: 0.65,
+                ease: "power2.out",
                 overwrite: "auto",
               });
               setEntryTrigger((prev) => prev + 1);
             }
-          } else if (self.progress < 0.20) {
+          } else if (self.progress < 0.26) {
             // User scrolled back up towards the Hero — hide and prepare for next entry
             if (hasEntered) {
               hasEntered = false;
               carouselWrapper.style.pointerEvents = "none";
               gsap.to(carouselWrapper, {
                 opacity: 0,
-                duration: 0.3,
+                duration: 0.4,
                 overwrite: "auto",
               });
             }
@@ -124,8 +128,13 @@ export default function Page2({
         },
       });
     },
-    { scope: sectionRef, dependencies: [scrollTriggerTrigger] }
+    { scope: sectionRef, dependencies: [scrollTriggerTrigger, isMobile] }
   );
+
+  // Skip rendering completely on mobile screens
+  if (mounted && isMobile) {
+    return null;
+  }
 
   return (
     <section
@@ -155,8 +164,8 @@ export default function Page2({
                 enabled: true,
                 enterFrom: "bottom",
                 transition: {
-                  duration: cardDimensions.width < 210 ? 0.7 : 1.0,
-                  ease: [0.25, 1, 0.5, 1],
+                  duration: cardDimensions.width < 210 ? 1.15 : 1.45,
+                  ease: [0.22, 1, 0.36, 1],
                 },
               }}
               autoScroll={{

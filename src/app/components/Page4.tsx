@@ -2,6 +2,8 @@
 
 import { forwardRef } from "react";
 import ReflectShader from "@/components/originkit/ui/reflect-shader";
+import Waves from "@/components/react-bits/Waves";
+import useScreenSize from "@/hooks/use-screen-size";
 import LetterSwapPingPong from "@/components/fancy/text/letter-swap-pingpong-anim";
 import TechText from "@/components/react-bits/TechText";
 
@@ -13,27 +15,47 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
   _props,
   ref
 ) {
+  const { isMobile, mounted } = useScreenSize();
+
   return (
     <footer
       ref={ref}
       id="contact"
       className="relative w-full h-full min-h-screen flex flex-col justify-between items-center overflow-hidden bg-black text-white select-none"
     >
-      {/* WebGL animated shader background — mouse follow disabled (hover={0}) */}
+      {/* Animated background: lightweight Canvas 2D Waves on mobile (< 768px), WebGL ReflectShader on desktop */}
       <div className="absolute inset-0 z-0 w-full h-full overflow-hidden pointer-events-none">
-        <ReflectShader
-          speed={130}
-          hover={0}
-          zoom={210}
-          bandGap={24}
-          brightness={110}
-          style={{
-            minWidth: "100%",
-            minHeight: "100%",
-            width: "100%",
-            height: "100%",
-          }}
-        />
+        {mounted && (
+          isMobile ? (
+            <Waves
+              lineColor="rgba(255, 255, 255, 0.3)"
+              backgroundColor="transparent"
+              waveSpeedX={0.015}
+              waveSpeedY={0.007}
+              waveAmpX={36}
+              waveAmpY={18}
+              friction={0.925}
+              tension={0.005}
+              maxCursorMove={100}
+              xGap={12}
+              yGap={32}
+            />
+          ) : (
+            <ReflectShader
+              speed={130}
+              hover={0}
+              zoom={210}
+              bandGap={24}
+              brightness={110}
+              style={{
+                minWidth: "100%",
+                minHeight: "100%",
+                width: "100%",
+                height: "100%",
+              }}
+            />
+          )
+        )}
       </div>
 
       {/* Main Content Layer with mix-blend-difference — exactly as in Hero */}

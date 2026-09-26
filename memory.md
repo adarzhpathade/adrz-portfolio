@@ -1,6 +1,6 @@
 # Memory — Adarsh'26 Portfolio (adrz)
 
-Last updated: 2026-09-26 (Unified WebGL carousel across all devices, mobile & desktop performance optimization, desktop section snapping, TechText wordmark calibration, build & ESLint clean)
+Last updated: 2026-09-26 (Refined desktop smooth scroll, increased Lenis duration & scrub, added custom auto-scroll from Hero to Section 2)
 
 ---
 
@@ -77,9 +77,10 @@ src/
 
 ### 1. Scroll Orchestration & Snapping (`page.tsx`)
 - Single GSAP ScrollTrigger timeline scrubs all 4 pages via `#main-scroll-container` (`end: "+=600%"`).
-- **Desktop Section Snapping**: Native ScrollTrigger `snap` config active when `!isMobile`:
-  - `snapTo: [0.0, 0.18, 0.38, 0.66, 0.86, 1.0]` (Hero Initial, Hero Reveal, Page 2 Carousel, Page 3 Projects, Page 3 Skills, Page 4 Contact).
-  - `duration: { min: 0.25, max: 0.75 }`, `delay: 0.15`, `ease: "power2.inOut"`. Automatically and smoothly settles on narrative stops once scroll exceeds ~60% between stops.
+- **Desktop Section Auto-Scroll**: Native ScrollTrigger `snap` config was replaced by a custom intent-based threshold check in `onUpdate`. If the user scrolls past 70% of the Hero's exit animation (progress `0.28`), `window.__lenis.scrollTo(maxScroll * 0.35, { duration: 1.5 })` fires to gracefully auto-navigate to the start of Section 2.
+- **Scroll Tuning**:
+  - Lenis configuration: `duration: 1.5` (up from 1.2), `wheelMultiplier: 0.9` for a weightier, cinematic feel.
+  - GSAP `scrub`: Increased to `1.2` on desktop timelines to introduce more noticeable animation lag for maximum fluidity.
 - **Mobile Touch Navigation**:
   - Vertical swipe threshold set to `55px` (calibrated to reject accidental micro-drags and horizontal carousel interactions).
   - Smooth glide via `lenis.scrollTo` with `duration: 0.9s` and `easeInOutQuad` easing (`t < 0.5 ? 2*t*t : 1 - (-2*t+2)^2 / 2`).
@@ -168,8 +169,9 @@ src/
 4. **Page 4 TechText Clipping & Extra Drag Behavior**:
    - Root cause: Canvas bounding box metric did not account for negative letter spacing causing trailing character clipping; drag interaction conflicted with page scroll.
    - Solution: Disabled dragging (`draggable={false}`) and computed width using `Math.max(boundingBoxWidth, advanceWidth)`.
-5. **Desktop Section Snapping**:
-   - Implemented native GSAP ScrollTrigger snap array (`[0.0, 0.18, 0.38, 0.66, 0.86, 1.0]`) to automatically pull the viewport to key sections when scrolling past 60%.
+5. **Desktop Scroll Dynamics**:
+   - Root cause: Standard snapping felt too rigid and the scroll animation tracked the mouse too 1:1, making it lack a premium "cinematic" heaviness.
+   - Solution: Increased Lenis `duration` to 1.5, GSAP `scrub` to 1.2, and replaced the native `snapTo` array with a bespoke `onUpdate` threshold auto-scroll (`lenis.scrollTo()`) specifically for the Hero -> Page 2 transition.
 
 ---
 

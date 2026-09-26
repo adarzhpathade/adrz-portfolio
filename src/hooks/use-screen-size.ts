@@ -13,21 +13,27 @@ const breakpoints: Record<Breakpoint, number> = {
 };
 
 export default function useScreenSize() {
+  const [mounted, setMounted] = useState<boolean>(false);
   const [width, setWidth] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const [height, setHeight] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerHeight : 800
   );
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
 
   useEffect(() => {
+    setMounted(true);
     const handleResize = () => {
       setWidth(window.innerWidth);
       setHeight(window.innerHeight);
+      setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener("resize", handleResize);
     handleResize();
+    window.addEventListener("resize", handleResize);
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -35,5 +41,6 @@ export default function useScreenSize() {
   const lessThan = (breakpoint: Breakpoint) => width < breakpoints[breakpoint];
   const greaterThan = (breakpoint: Breakpoint) => width >= breakpoints[breakpoint];
 
-  return { width, height, lessThan, greaterThan };
+  return { width, height, isMobile, mounted, lessThan, greaterThan };
 }
+

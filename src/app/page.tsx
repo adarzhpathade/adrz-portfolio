@@ -11,14 +11,17 @@ import Page3 from "./components/Page3";
 import Page4 from "./components/Page4";
 import AboutCard from "./components/AboutCard";
 import Preloader from "./components/Preloader";
+import useScreenSize from "@/hooks/use-screen-size";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
 
 export default function Home() {
+  const { isMobile, mounted } = useScreenSize();
   const containerRef = useRef<HTMLElement>(null);
   const lightCanvasRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef({ page2Triggered: false });
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isPreloaderExiting, setIsPreloaderExiting] = useState(false);
   const [isPreloaderComplete, setIsPreloaderComplete] = useState(false);
@@ -59,243 +62,151 @@ export default function Home() {
     };
   }, [isPreloaderComplete]);
 
-  // Mobile Section Snap / Auto-Scroll: On a little scroll or swipe in mobile view,
-  // automatically and smoothly transitions the whole section to the next/previous state.
+  // Pre-calculate and refresh ScrollTrigger measurements once DOM is mounted behind loader
   useEffect(() => {
-    if (typeof window === "undefined" || !isPreloaderComplete || isAboutOpen) return;
-
-    // The key narrative section stops of the portfolio on mobile:
-    // 0.00: Hero Initial (dark cover, title, subtitle)
-    // 0.18: Hero Revealed (shader background active, 3-line statement in focus)
-    // 0.38: Page 2 (Light canvas with 3D Motion Graphics Carousel)
-    // 0.66: Page 3 Projects (3D Cube Projects Gallery)
-    // 0.86: Page 3 Skills (Dark theme #080808 with animated BlurText skills)
-    // 1.00: Page 4 Footer (ReflectShader Contact Section)
-    const SECTIONS = [0.0, 0.18, 0.38, 0.66, 0.86, 1.0];
-    let isTransitioning = false;
-    let transitionTimeout: NodeJS.Timeout | null = null;
-    let touchStartY = 0;
-    let touchStartX = 0;
-    let isTrackingTouch = false;
-
-    const getTargetScrollY = (targetProgress: number) => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      return Math.round(targetProgress * maxScroll);
-    };
-
-    const getCurrentProgress = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (maxScroll <= 0) return 0;
-      return Math.max(0, Math.min(1, window.scrollY / maxScroll));
-    };
-
-    const scrollToProgress = (targetProgress: number) => {
-      if (isTransitioning) return;
-      isTransitioning = true;
-
-      const targetY = getTargetScrollY(targetProgress);
-      const lenis = window.__lenis;
-
-      if (lenis && typeof lenis.scrollTo === "function") {
-        lenis.scrollTo(targetY, {
-          duration: 0.9,
-          easing: (t: number) =>
-            t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
-          lock: true,
-        });
-      } else {
-        window.scrollTo({
-          top: targetY,
-          behavior: "smooth",
-        });
-      }
-
-      if (transitionTimeout) clearTimeout(transitionTimeout);
-      transitionTimeout = setTimeout(() => {
-        isTransitioning = false;
-      }, 1000);
-    };
-
-    const goToNextSection = () => {
-      const currentP = getCurrentProgress();
-      // Find the next section ahead of current progress (+ epsilon)
-      const nextSection = SECTIONS.find((s) => s > currentP + 0.03);
-      if (nextSection !== undefined) {
-        scrollToProgress(nextSection);
-      }
-    };
-
-    const goToPrevSection = () => {
-      const currentP = getCurrentProgress();
-      // Find the previous section behind current progress (- epsilon)
-      const prevSections = SECTIONS.filter((s) => s < currentP - 0.03);
-      if (prevSections.length > 0) {
-        const prevSection = prevSections[prevSections.length - 1];
-        scrollToProgress(prevSection);
-      }
-    };
-
-    // Touch event handlers for mobile devices
-    const onTouchStart = (e: TouchEvent) => {
-      if (window.innerWidth >= 768 || e.touches.length !== 1) return;
-      touchStartY = e.touches[0].clientY;
-      touchStartX = e.touches[0].clientX;
-      isTrackingTouch = true;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (window.innerWidth >= 768 || !isTrackingTouch || e.touches.length !== 1) return;
-
-      if (isTransitioning) {
-        // Prevent touch interruption during section transition
-        e.preventDefault();
-        return;
-      }
-
-      const currentY = e.touches[0].clientY;
-      const currentX = e.touches[0].clientX;
-      const deltaY = currentY - touchStartY;
-      const deltaX = currentX - touchStartX;
-
-      // If user is dragging horizontally (e.g. spinning the 3D CylinderCarousel on Page 2),
-      // do NOT intercept — let the carousel handle it cleanly
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-        isTrackingTouch = false;
-        return;
-      }
-
-      // Swipe threshold — large enough to avoid accidental triggers but responsive enough to feel intentional
-      if (Math.abs(deltaY) >= 55) {
-        e.preventDefault();
-        isTrackingTouch = false;
-
-        if (deltaY < 0) {
-          // Swiped UP -> user intends to scroll DOWN to the next section
-          goToNextSection();
-        } else {
-          // Swiped DOWN -> user intends to scroll UP to the previous section
-          goToPrevSection();
-        }
-      }
-    };
-
-    const onTouchEnd = () => {
-      isTrackingTouch = false;
-    };
-
-    // Wheel event handler for mobile-sized viewports (e.g. DevTools emulator or small screens)
-    const onWheel = (e: WheelEvent) => {
-      if (window.innerWidth >= 768) return;
-
-      if (isTransitioning) {
-        e.preventDefault();
-        return;
-      }
-
-      if (Math.abs(e.deltaY) >= 12) {
-        e.preventDefault();
-        if (e.deltaY > 0) {
-          goToNextSection();
-        } else {
-          goToPrevSection();
-        }
-      }
-    };
-
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    window.addEventListener("wheel", onWheel, { passive: false });
-
-    return () => {
-      if (transitionTimeout) clearTimeout(transitionTimeout);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
-      window.removeEventListener("wheel", onWheel);
-    };
-  }, [isPreloaderComplete, isAboutOpen]);
+    if (mounted) {
+      ScrollTrigger.refresh();
+    }
+  }, [mounted]);
 
   useGSAP(
     () => {
       const lightCanvas = lightCanvasRef.current;
       if (!lightCanvas) return;
 
-      const isMobile = window.innerWidth < 768;
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: "#main-scroll-container",
-          start: "top top",
-          end: "+=600%",
-          scrub: isMobile ? 0.6 : 1,
-          snap: !isMobile ? {
-            snapTo: [0.0, 0.18, 0.38, 0.66, 0.86, 1.0],
-            duration: { min: 0.25, max: 0.75 },
-            delay: 0.15,
-            ease: "power2.inOut",
-          } : undefined,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            // 0.00 -> 0.24: Hero (Dark)
-            // 0.24 -> 0.74: Page 2 & Page 3 Carousel (Light)
-            // 0.74 -> 1.00: Page 3 Skills & Page 4 (Dark)
-            const p = self.progress;
-            const dark = p < 0.24 || p >= 0.74;
-            setIsDarkTheme(dark);
+      const mm = gsap.matchMedia();
+
+      // MOBILE TIMELINE (< 768px): Page 2 is excluded, lightCanvas stays at 0% until curtain reveal
+      mm.add("(max-width: 767px)", () => {
+        gsap.set(lightCanvas, { yPercent: 0 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: "#main-scroll-container",
+            start: "top top",
+            end: "+=600%",
+            scrub: 0.35,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const p = self.progress;
+              // Dark theme in Hero (< 0.22) and Dark in Skills/Footer (>= 0.60)
+              setIsDarkTheme(p < 0.22 || p >= 0.60);
+            },
           },
-        },
+        });
+
+        tl.set(lightCanvas, { yPercent: 0 }, 0);
+
+        // 0.00 -> 0.58: lightCanvas stays at yPercent: 0 (showing Page 3 full screen)
+        // 0.58 -> 0.63: lightCanvas background smoothly transitions to dark (#080808) for Skills
+        tl.to(
+          lightCanvas,
+          {
+            backgroundColor: "#080808",
+            ease: "power1.inOut",
+            duration: 0.05,
+          },
+          0.58
+        );
+
+        // 0.92 -> 1.00: lightCanvas curtain reveal from 0% to -100%, lifting to reveal Page 4 Footer
+        tl.to(
+          lightCanvas,
+          {
+            yPercent: -100,
+            ease: "power1.inOut",
+            duration: 0.08,
+          },
+          0.92
+        );
+
+        // Unblock pointer events for Page 4 once lightCanvas has moved out
+        tl.to(
+          lightCanvas,
+          { pointerEvents: "none", duration: 0.02 },
+          0.98
+        );
+
+        tl.set({}, {}, 1.0);
       });
 
-      // 0.00 -> 0.48: lightCanvas stays at yPercent: 0 (showing Page 2)
-      // 0.48 -> 0.62: lightCanvas smoothly scrolls up by 50% of its height,
-      // bringing Page 3 100% fully into the viewport
-      // 0.62 -> 0.74: Page 3 holds fully in place for interactive 3D exploration
-      tl.fromTo(
-        lightCanvas,
-        { yPercent: 0 },
-        {
-          yPercent: -50,
-          ease: "power1.inOut",
-          duration: 0.14,
-        },
-        0.48
-      );
+      // DESKTOP TIMELINE (>= 768px): lightCanvas holds Page 2 (0-50%) and Page 3 (50-100%)
+      mm.add("(min-width: 768px)", () => {
+        gsap.set(lightCanvas, { yPercent: 0 });
 
-      // 0.72 -> 0.80: lightCanvas background smoothly transitions to dark (#080808)
-      tl.to(
-        lightCanvas,
-        {
-          backgroundColor: "#080808",
-          ease: "power1.inOut",
-          duration: 0.08,
-        },
-        0.72
-      );
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: "#main-scroll-container",
+            start: "top top",
+            end: "+=600%",
+            scrub: 1.2,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const p = self.progress;
+              setIsDarkTheme(p < 0.24 || p >= 0.74);
+              
+              if (window.__lenis) {
+                // If scrolling down and we pass ~28% (roughly 70% through the Hero out transition)
+                if (self.direction === 1 && p > 0.28 && p < 0.35 && !autoScrollRef.current.page2Triggered) {
+                  autoScrollRef.current.page2Triggered = true;
+                  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                  window.__lenis.scrollTo(maxScroll * 0.35, { duration: 1.5 }); 
+                }
+                // Reset the trigger when user scrolls back up
+                if (self.direction === -1 && p < 0.15) {
+                  autoScrollRef.current.page2Triggered = false;
+                }
+              }
+            },
+          },
+        });
 
-      // 0.82 -> 0.92: Page 3 dark skills hold completely clean with zero interference
+        // Lock lightCanvas at yPercent: 0 initially (showing Page 2)
+        tl.set(lightCanvas, { yPercent: 0 }, 0);
 
-      // 0.93 -> 1.00: lightCanvas smoothly scrolls from -50% to -100%,
-      // lifting Page 3 up like a curtain to reveal Page 4 (Footer with ReflectShader) underneath
-      tl.to(
-        lightCanvas,
-        {
-          yPercent: -100,
-          ease: "power1.inOut",
-          duration: 0.07,
-        },
-        0.93
-      );
+        // 0.00 -> 0.48: lightCanvas stays firmly at yPercent: 0 (showing Page 2)
+        // 0.48 -> 0.62: lightCanvas smoothly scrolls up by 50% to reveal Page 3
+        tl.to(
+          lightCanvas,
+          {
+            yPercent: -50,
+            ease: "power1.inOut",
+            duration: 0.14,
+          },
+          0.48
+        );
 
-      // Unblock pointer events for Page 4 once lightCanvas has moved out, and restore on reverse scrub
-      tl.fromTo(
-        lightCanvas,
-        { pointerEvents: "auto" },
-        { pointerEvents: "none", duration: 0.02 },
-        0.98
-      );
+        // 0.72 -> 0.76: lightCanvas background smoothly transitions to dark (#080808)
+        tl.to(
+          lightCanvas,
+          {
+            backgroundColor: "#080808",
+            ease: "power1.inOut",
+            duration: 0.04,
+          },
+          0.72
+        );
 
-      // Explicitly anchor timeline total duration to 1.0
-      tl.set({}, {}, 1.0);
+        // 0.92 -> 1.00: lightCanvas smoothly scrolls from -50% to -100% to reveal Page 4
+        tl.to(
+          lightCanvas,
+          {
+            yPercent: -100,
+            ease: "power1.inOut",
+            duration: 0.08,
+          },
+          0.92
+        );
+
+        // Unblock pointer events for Page 4
+        tl.to(
+          lightCanvas,
+          { pointerEvents: "none", duration: 0.02 },
+          0.98
+        );
+
+        tl.set({}, {}, 1.0);
+      });
     },
     { scope: containerRef }
   );
@@ -327,19 +238,20 @@ export default function Home() {
           <Page4 scrollTriggerTrigger="#main-scroll-container" />
         </div>
 
-        {/* Unified Light Canvas (Page 2 + Page 3) layered above Page 4 at z-10 */}
+        {/* Unified Light Canvas layered above Page 4 at z-10 */}
         <div
           ref={lightCanvasRef}
-          className="absolute top-0 left-0 w-full flex flex-col bg-[#ECECEC] z-10 pointer-events-auto"
-          style={{ height: "200%" }}
+          className="absolute top-0 left-0 w-full flex flex-col bg-[#ECECEC] z-10 pointer-events-auto h-full md:h-[200%]"
         >
-          {/* Page 2 occupies the top 100vh */}
-          <div className="w-full h-1/2 relative shrink-0">
-            <Page2 scrollTriggerTrigger="#main-scroll-container" />
+          {/* Page 2 occupies the top 100vh — completely skipped on mobile */}
+          <div className="hidden md:block w-full h-1/2 relative shrink-0">
+            {mounted && !isMobile ? (
+              <Page2 scrollTriggerTrigger="#main-scroll-container" />
+            ) : null}
           </div>
 
-          {/* Page 3 occupies the bottom 100vh, continuously attached */}
-          <div className="w-full h-1/2 relative shrink-0">
+          {/* Page 3: 100% on mobile, bottom 50% on desktop */}
+          <div className="w-full relative shrink-0 h-full md:h-1/2">
             <Page3 scrollTriggerTrigger="#main-scroll-container" />
           </div>
         </div>

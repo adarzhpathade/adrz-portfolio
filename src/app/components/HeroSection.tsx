@@ -6,6 +6,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import ReflectShader from "@/components/originkit/ui/reflect-shader";
+import Waves from "@/components/react-bits/Waves";
+import useScreenSize from "@/hooks/use-screen-size";
 import LetterSwapPingPong from "@/components/fancy/text/letter-swap-pingpong-anim";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -29,6 +31,7 @@ export default function HeroSection({
   onToggleAbout,
   isReady = true,
 }: HeroSectionProps) {
+  const { isMobile, mounted } = useScreenSize();
   const sectionRef = useRef<HTMLElement>(null);
   const rectangleRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
@@ -57,7 +60,7 @@ export default function HeroSection({
         trigger: scrollTriggerTrigger,
         start: "top top",
         end: "+=600%", 
-        scrub: isMobile ? 0.35 : 1,
+        scrub: isMobile ? 0.35 : 1.2,
         invalidateOnRefresh: true,
       },
     });
@@ -90,12 +93,12 @@ export default function HeroSection({
       words,
       {
         opacity: 0,
-        filter: "blur(12px)",
+        filter: isMobile ? "none" : "blur(12px)",
         y: 20,
       },
       {
         opacity: 0.55,
-        filter: "blur(0px)",
+        filter: isMobile ? "none" : "blur(0px)",
         y: 0,
         stagger: {
           amount: 0.06,
@@ -110,18 +113,18 @@ export default function HeroSection({
     // 5. Bottom "DESIGN — Folio" fades out promptly on scroll
     tl.to(bottomHeading, {
       opacity: 0,
-      filter: "blur(14px)",
+      filter: isMobile ? "none" : "blur(14px)",
       ease: "power1.out",
       duration: 0.03,
     }, 0);
 
     // --- PHASE 1.5: Hold Hero Revealed State (0.14 -> 0.20) ---
 
-    // --- PHASE 2: Transition to Page 2 (0.20 -> 0.34) ---
-    // 6. 3-line text fades out and blurs upwards
+    // --- PHASE 2: Transition out of Hero (0.20 -> 0.34) ---
+    // 6. 3-line text fades out
     tl.to(revealText, {
       opacity: 0,
-      filter: "blur(12px)",
+      filter: isMobile ? "none" : "blur(12px)",
       y: -30,
       ease: "power2.in",
       duration: 0.05,
@@ -153,9 +156,27 @@ export default function HeroSection({
       id="hero" 
       className="absolute inset-0 z-20 w-full h-full min-h-screen flex flex-col items-center justify-start overflow-hidden bg-black text-white"
     >
-      {/* WebGL shader background — lives inside section so it cleanly slides up with Hero */}
+      {/* Background: lightweight Canvas 2D Waves on mobile (< 768px), WebGL ReflectShader on desktop */}
       <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
-        <ReflectShader speed={150} hover={0} zoom={150} style={{ minWidth: "100%", minHeight: "100%", width: "100%", height: "100%" }} />
+        {mounted && (
+          isMobile ? (
+            <Waves
+              lineColor="rgba(255, 255, 255, 0.3)"
+              backgroundColor="transparent"
+              waveSpeedX={0.015}
+              waveSpeedY={0.007}
+              waveAmpX={36}
+              waveAmpY={18}
+              friction={0.925}
+              tension={0.005}
+              maxCursorMove={100}
+              xGap={12}
+              yGap={32}
+            />
+          ) : (
+            <ReflectShader speed={150} hover={0} zoom={150} style={{ minWidth: "100%", minHeight: "100%", width: "100%", height: "100%" }} />
+          )
+        )}
       </div>
 
       {/* Dark rectangle — background overlay that scrolls out on initial scroll */}

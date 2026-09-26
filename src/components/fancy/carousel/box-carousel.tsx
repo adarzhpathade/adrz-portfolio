@@ -85,13 +85,10 @@ const CubeFace = memo(
     children,
     style,
     debug,
-    isDragging,
-    enableDrag,
   }: FaceProps & { isDragging?: boolean; enableDrag?: boolean }) => (
     <div
       className={cn(
-        "absolute overflow-hidden select-none [backface-visibility:hidden]",
-        enableDrag && (isDragging ? "cursor-grabbing" : "cursor-pointer"),
+        "absolute overflow-hidden select-none [backface-visibility:hidden] cursor-default",
         debug && "backface-visible opacity-50",
         className
       )}
@@ -362,13 +359,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         startRotation.current = isVertical ? baseRotateX.get() : baseRotateY.get();
 
         if (typeof document !== "undefined") {
-          document.body.style.cursor = "grabbing";
           document.body.style.userSelect = "none";
-        }
-
-        // Prevent native image dragging / unwanted text selection
-        if ("cancelable" in e && e.cancelable) {
-          e.preventDefault();
         }
       },
       [enableDrag, direction, baseRotateX, baseRotateY, releaseLock]
@@ -381,10 +372,25 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         const point = "touches" in e ? e.touches[0] : e;
         const deltaX = point.clientX - startPosition.current.x;
         const deltaY = point.clientY - startPosition.current.y;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+
+        // If on touch and vertical scroll motion dominates, abort drag to let page scroll freely
+        if ("touches" in e && !hasDragged.current) {
+          if (absY > absX && absY > 8) {
+            isDragging.current = false;
+            setIsDraggingState(false);
+            return;
+          }
+        }
+
         const dist = Math.hypot(deltaX, deltaY);
         dragDistance.current = dist;
-        if (dist > 6) {
+        if (dist > 14) {
           hasDragged.current = true;
+          if ("cancelable" in e && e.cancelable && absX > absY) {
+            e.preventDefault();
+          }
         }
 
         const isVertical = direction === "top" || direction === "bottom";
@@ -420,7 +426,6 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
       setIsDraggingState(false);
 
       if (typeof document !== "undefined") {
-        document.body.style.cursor = "";
         document.body.style.userSelect = "";
       }
 
@@ -465,7 +470,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
     // Handle pure click on cube (not triggered during/after dragging)
     const handleClick = useCallback(
       (e: React.MouseEvent) => {
-        if (hasDragged.current || dragDistance.current > 6) {
+        if (hasDragged.current || dragDistance.current > 14) {
           e.preventDefault();
           e.stopPropagation();
           return;
@@ -475,7 +480,17 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
         if (onItemClick) {
           onItemClick(currentItem, currentItemIndex);
         } else if (currentItem?.link) {
-          window.open(currentItem.link, "_blank", "noopener,noreferrer");
+          try {
+            const a = document.createElement("a");
+            a.href = currentItem.link;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } catch {
+            window.open(currentItem.link, "_blank", "noopener,noreferrer");
+          }
         }
       },
       [items, currentItemIndex, onItemClick]
@@ -687,8 +702,7 @@ const BoxCarousel = forwardRef<BoxCarouselRef, BoxCarouselProps>(
     return (
       <div
         className={cn(
-          "relative focus:outline-0 select-none group",
-          enableDrag && (isDraggingState ? "cursor-grabbing" : "cursor-pointer"),
+          "relative focus:outline-0 select-none group touch-pan-y cursor-default",
           className
         )}
         style={{
