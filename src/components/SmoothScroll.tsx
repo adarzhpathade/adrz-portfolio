@@ -33,7 +33,7 @@ export default function SmoothScroll({
     };
 
     gsap.ticker.add(updateRaf);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
 
     return () => {
       if (typeof window !== "undefined") {

@@ -3,6 +3,7 @@
 import { forwardRef } from "react";
 import ReflectShader from "@/components/originkit/ui/reflect-shader";
 import LetterSwapPingPong from "@/components/fancy/text/letter-swap-pingpong-anim";
+import TechText from "@/components/react-bits/TechText";
 
 interface Page4Props {
   scrollTriggerTrigger?: string;
@@ -49,21 +50,31 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
             Got a project? Let’s talk.
           </p>
 
-          {/* Massive Display Title: Hero of the Footer */}
-          <a
-            href="mailto:adarshpathade79@gmail.com"
-            title="Send an email to Adarsh"
-            className="group block w-full max-w-full text-center mt-3 sm:mt-5 cursor-pointer select-none transition-transform duration-300 hover:scale-[1.01]"
-          >
-            <h1 className="font-sans text-[clamp(2.2rem,11.5vw,17vh)] sm:text-[clamp(3.5rem,13vw,17vh)] font-[380] leading-[0.85] tracking-tighter uppercase whitespace-nowrap text-center text-white inline-flex items-baseline justify-center">
-              <span className="mr-[0.2em]">LET’S</span>
-              <span className="font-display italic font-normal mr-[0.14em]">C</span>
-              <span>REATE.</span>
-            </h1>
-          </a>
+          {/* Massive Display Title: TechText Interactive Wordmark */}
+          <div className="w-full max-w-[1400px] h-[clamp(130px,22vh,260px)] relative -my-1 sm:my-0 flex items-center justify-center pointer-events-auto">
+            <h1 className="sr-only">LET’S CREATE.</h1>
+            <TechText
+              text="LET'S CREATE."
+              fontWeight={400}
+              fontSize={180}
+              letterSpacing={-0.04}
+              color="#ffffff"
+              accentColor="#ffffff"
+              reveal="letter"
+              dashLength={4}
+              dashGap={2}
+              strokeWidth={1.5}
+              specks={15}
+              selection={true}
+              labels={true}
+              draggable={false}
+              sweep={true}
+              speed={1}
+            />
+          </div>
 
           {/* Direct Email Typography Link with LetterSwapPingPong (No Glass, No Box, No Arrow) */}
-          <div className="flex items-center justify-center mt-4 sm:mt-6">
+          <div className="flex items-center justify-center mt-1 sm:mt-2">
             <a
               href="mailto:adarshpathade79@gmail.com"
               className="inline-block text-white transition-opacity hover:opacity-80 cursor-pointer"

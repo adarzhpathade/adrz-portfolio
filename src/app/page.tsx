@@ -98,10 +98,9 @@ export default function Home() {
 
       if (lenis && typeof lenis.scrollTo === "function") {
         lenis.scrollTo(targetY, {
-          duration: 1.4,
-          // Silky smooth easeInOutCubic: gentle start, buttery glide, soft deceleration
+          duration: 0.9,
           easing: (t: number) =>
-            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+            t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
           lock: true,
         });
       } else {
@@ -114,7 +113,7 @@ export default function Home() {
       if (transitionTimeout) clearTimeout(transitionTimeout);
       transitionTimeout = setTimeout(() => {
         isTransitioning = false;
-      }, 1450);
+      }, 1000);
     };
 
     const goToNextSection = () => {
@@ -165,8 +164,8 @@ export default function Home() {
         return;
       }
 
-      // "On little scroll of the user" — small threshold (22px) detects vertical scroll intent
-      if (Math.abs(deltaY) >= 22) {
+      // Swipe threshold — large enough to avoid accidental triggers but responsive enough to feel intentional
+      if (Math.abs(deltaY) >= 55) {
         e.preventDefault();
         isTrackingTouch = false;
 
@@ -228,7 +227,13 @@ export default function Home() {
           trigger: "#main-scroll-container",
           start: "top top",
           end: "+=600%",
-          scrub: isMobile ? 0.35 : 1,
+          scrub: isMobile ? 0.6 : 1,
+          snap: !isMobile ? {
+            snapTo: [0.0, 0.18, 0.38, 0.66, 0.86, 1.0],
+            duration: { min: 0.25, max: 0.75 },
+            delay: 0.15,
+            ease: "power2.inOut",
+          } : undefined,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             // 0.00 -> 0.24: Hero (Dark)

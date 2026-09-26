@@ -743,10 +743,10 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     let W = Math.max(1, mount.clientWidth)
     let H = Math.max(1, mount.clientHeight)
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768
-    const maxDpr = isMobile ? 1.25 : 2
+    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true })
+
+    const maxDpr = isMobile ? 1 : 2
     renderer.setPixelRatio(still ? 1 : Math.min(window.devicePixelRatio || 1, maxDpr))
     renderer.setSize(W, H)
 
@@ -2036,6 +2036,7 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
                 ownedVideos.forEach((v) => {
                     v.play().catch(() => {})
                 })
+                startLoop()
             } else {
                 ownedVideos.forEach((v) => {
                     v.pause()
@@ -2046,14 +2047,20 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
     io.observe(mount)
 
     function tick(t: number) {
-        raf = requestAnimationFrame(tick)
-        if (!isIntersecting) {
-            lastT = t
+        if (!isIntersecting || disposed) {
+            raf = 0
             return
         }
+        raf = requestAnimationFrame(tick)
         const dt = Math.min(0.05, Math.max(0, (t - lastT) / 1000))
         lastT = t
         step(dt)
+    }
+
+    function startLoop() {
+        if (raf || disposed || still) return
+        lastT = performance.now()
+        raf = requestAnimationFrame(tick)
     }
 
     function resize() {
@@ -2090,7 +2097,7 @@ function createEngine(mount: HTMLElement, getParams: () => Params) {
         window.addEventListener("keydown", onKeyDown)
         window.addEventListener("scroll", readBounds, { passive: true })
         window.addEventListener("resize", readBounds)
-        raf = requestAnimationFrame(tick)
+        startLoop()
     }
 
     function destroy() {

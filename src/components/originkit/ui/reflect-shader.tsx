@@ -232,20 +232,16 @@ export default function ShaderGroupSwitcher(props: ShaderGroupSwitcherProps) {
         ro.observe(canvas)
 
         let isVisible = true
-        const io = new IntersectionObserver((entries) => {
-            isVisible = entries[0]?.isIntersecting ?? true
-        }, { threshold: 0.01 })
-        io.observe(canvas)
-
         let raf = 0
         let last = 0
         let t = 0
+
         const frame = (now: number) => {
-            raf = requestAnimationFrame(frame)
             if (!isVisible) {
-                last = now
+                raf = 0
                 return
             }
+            raf = requestAnimationFrame(frame)
             const dt = last ? Math.min((now - last) / 1000, 1 / 15) : 0
             last = now
             const l = live.current
@@ -280,10 +276,25 @@ export default function ShaderGroupSwitcher(props: ShaderGroupSwitcherProps) {
 
             gl.drawArrays(gl.TRIANGLES, 0, 3)
         }
-        raf = requestAnimationFrame(frame)
+
+        const startLoop = () => {
+            if (raf) return
+            last = performance.now()
+            raf = requestAnimationFrame(frame)
+        }
+
+        const io = new IntersectionObserver((entries) => {
+            isVisible = entries[0]?.isIntersecting ?? true
+            if (isVisible) startLoop()
+        }, { threshold: 0.01 })
+        io.observe(canvas)
+
+        startLoop()
 
         return () => {
+            isVisible = false
             cancelAnimationFrame(raf)
+            raf = 0
             ro.disconnect()
             io.disconnect()
         }
