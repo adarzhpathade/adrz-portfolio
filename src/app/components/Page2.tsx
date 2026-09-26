@@ -149,7 +149,7 @@ export default function Page2({
         style={{ opacity: 0 }}
       >
         {/* Scaled-down & shifted-up Carousel container */}
-        <div className="w-full h-full flex items-center justify-center translate-y-0 sm:-translate-y-6 pt-14 sm:pt-14 pb-14 sm:pb-12">
+        <div className="w-full h-full flex items-center justify-center translate-y-0 sm:-translate-y-4 pt-4 sm:pt-2 pb-14 sm:pb-12">
           <LiquidGlassCarousel
               items={PORTFOLIO_VIDEOS}
               background="#ECECEC"
