@@ -21,6 +21,7 @@ html, body {
   color: var(--foreground);
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overscroll-behavior-y: none;
 }
 
 /* Hide scrollbar universally for the entire UI */

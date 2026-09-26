@@ -290,8 +290,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         if (projectsHeading) {
           exitTl.fromTo(
             projectsHeading,
-            { opacity: 1, y: 0 },
-            { opacity: 0, y: -16, ease: "power1.inOut", duration: 0.05 },
+            { opacity: 1, y: 0, filter: "blur(0px)" },
+            { opacity: 0, y: -16, filter: "blur(12px)", ease: "power1.inOut", duration: 0.05 },
             0.58
           );
         }
@@ -300,8 +300,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         if (contentWrapper) {
           exitTl.fromTo(
             contentWrapper,
-            { opacity: 1, y: 0, scale: 1 },
-            { opacity: 0, y: -16, scale: 0.96, ease: "power1.inOut", duration: 0.05 },
+            { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+            { opacity: 0, y: -16, scale: 0.96, filter: "blur(12px)", ease: "power1.inOut", duration: 0.05 },
             0.58
           );
           exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.63);
@@ -311,8 +311,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         if (topStatement) {
           exitTl.fromTo(
             topStatement,
-            { opacity: 1, y: 0 },
-            { opacity: 0, y: -10, ease: "power1.inOut", duration: 0.04 },
+            { opacity: 1, y: 0, filter: "blur(0px)" },
+            { opacity: 0, y: -10, filter: "blur(12px)", ease: "power1.inOut", duration: 0.04 },
             0.58
           );
         }
@@ -444,8 +444,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         if (projectsHeading) {
           exitTl.fromTo(
             projectsHeading,
-            { opacity: 1, y: 0 },
-            { opacity: 0, y: -20, ease: "power1.inOut", duration: 0.04 },
+            { opacity: 1, y: 0, filter: "blur(0px)" },
+            { opacity: 0, y: -20, filter: "blur(12px)", ease: "power1.inOut", duration: 0.04 },
             0.72
           );
         }
@@ -453,8 +453,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         if (contentWrapper) {
           exitTl.fromTo(
             contentWrapper,
-            { opacity: 1, y: 0 },
-            { opacity: 0, y: -20, ease: "power1.in", duration: 0.04 },
+            { opacity: 1, y: 0, filter: "blur(0px)" },
+            { opacity: 0, y: -20, filter: "blur(12px)", ease: "power1.in", duration: 0.04 },
             0.72
           );
           exitTl.set(contentWrapper, { pointerEvents: "none" }, 0.76);
@@ -463,8 +463,8 @@ const Page3 = forwardRef<HTMLElement, Page3Props>(function Page3(
         if (topStatement) {
           exitTl.fromTo(
             topStatement,
-            { opacity: 1, y: 0 },
-            { opacity: 0, y: -12, ease: "power1.in", duration: 0.04 },
+            { opacity: 1, y: 0, filter: "blur(0px)" },
+            { opacity: 0, y: -12, filter: "blur(12px)", ease: "power1.in", duration: 0.04 },
             0.72
           );
         }

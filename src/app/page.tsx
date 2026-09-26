@@ -21,7 +21,7 @@ export default function Home() {
   const { isMobile, mounted } = useScreenSize();
   const containerRef = useRef<HTMLElement>(null);
   const lightCanvasRef = useRef<HTMLDivElement>(null);
-  const autoScrollRef = useRef({ page2Triggered: false });
+  const autoScrollRef = useRef({ page2Triggered: false, mobileProjectsTriggered: false, mobileSkillsTriggered: false });
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isPreloaderExiting, setIsPreloaderExiting] = useState(false);
   const [isPreloaderComplete, setIsPreloaderComplete] = useState(false);
@@ -76,6 +76,28 @@ export default function Home() {
 
       const mm = gsap.matchMedia();
 
+      const updateThemeColor = (p: number, isMobileTimeline: boolean) => {
+        const isDark = isMobileTimeline 
+          ? (p < 0.22 || p >= 0.60)
+          : (p < 0.24 || p >= 0.74);
+          
+        setIsDarkTheme(isDark);
+        
+        let themeColor = "#000000";
+        if (!isDark) themeColor = "#ECECEC";
+        else if (p > 0.5) themeColor = "#080808"; 
+        
+        let metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (!metaTheme) {
+          metaTheme = document.createElement('meta');
+          metaTheme.setAttribute('name', 'theme-color');
+          document.head.appendChild(metaTheme);
+        }
+        if (metaTheme.getAttribute("content") !== themeColor) {
+          metaTheme.setAttribute("content", themeColor);
+        }
+      };
+
       // MOBILE TIMELINE (< 768px): Page 2 is excluded, lightCanvas stays at 0% until curtain reveal
       mm.add("(max-width: 767px)", () => {
         gsap.set(lightCanvas, { yPercent: 0 });
@@ -89,8 +111,29 @@ export default function Home() {
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const p = self.progress;
-              // Dark theme in Hero (< 0.22) and Dark in Skills/Footer (>= 0.60)
-              setIsDarkTheme(p < 0.22 || p >= 0.60);
+              updateThemeColor(p, true);
+
+              if (window.__lenis) {
+                // Hero to Projects auto-scroll on mobile
+                if (self.direction === 1 && p > 0.22 && p < 0.28 && !autoScrollRef.current.mobileProjectsTriggered) {
+                  autoScrollRef.current.mobileProjectsTriggered = true;
+                  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                  window.__lenis.scrollTo(maxScroll * 0.32, { duration: 1.2 }); 
+                }
+                if (self.direction === -1 && p < 0.15) {
+                  autoScrollRef.current.mobileProjectsTriggered = false;
+                }
+
+                // Projects to Skills auto-scroll on mobile for an easy, smooth transition
+                if (self.direction === 1 && p > 0.55 && p < 0.61 && !autoScrollRef.current.mobileSkillsTriggered) {
+                  autoScrollRef.current.mobileSkillsTriggered = true;
+                  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                  window.__lenis.scrollTo(maxScroll * 0.66, { duration: 1.2 }); 
+                }
+                if (self.direction === -1 && p < 0.48) {
+                  autoScrollRef.current.mobileSkillsTriggered = false;
+                }
+              }
             },
           },
         });
@@ -143,7 +186,7 @@ export default function Home() {
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const p = self.progress;
-              setIsDarkTheme(p < 0.24 || p >= 0.74);
+              updateThemeColor(p, false);
               
               if (window.__lenis) {
                 // If scrolling down and we pass ~28% (roughly 70% through the Hero out transition)
@@ -232,7 +275,7 @@ export default function Home() {
       />
 
       {/* Sticky viewport pinned smoothly for the duration of the scroll animation */}
-      <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
+      <div className="sticky top-0 left-0 w-full h-[100dvh] overflow-hidden">
         {/* Page 4 (Footer) sits at the base z-0 with animated ReflectShader background */}
         <div className="absolute inset-0 z-0 w-full h-full pointer-events-auto">
           <Page4 scrollTriggerTrigger="#main-scroll-container" />

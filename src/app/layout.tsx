@@ -37,6 +37,10 @@ const fragmentMono = localFont({
 export const metadata: Metadata = {
   title: "Adrz - Portfolio",
   description: "Personal portfolio website",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport = {

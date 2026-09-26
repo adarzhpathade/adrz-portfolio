@@ -18,8 +18,8 @@ export default function SmoothScroll({
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 0.9,
-      touchMultiplier: 1,
-      syncTouch: false,
+      touchMultiplier: 2,
+      syncTouch: true,
     });
 
     if (typeof window !== "undefined") {
@@ -33,7 +33,7 @@ export default function SmoothScroll({
     };
 
     gsap.ticker.add(updateRaf);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
 
     return () => {
       if (typeof window !== "undefined") {

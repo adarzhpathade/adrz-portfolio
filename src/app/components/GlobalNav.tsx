@@ -165,7 +165,7 @@ export default function GlobalNav({
       ref={navContainerRef} 
       className="fixed top-0 left-0 w-full h-0 z-40 pointer-events-none"
     >
-      <div className="w-full relative h-screen">
+      <div className="w-full relative h-[100dvh]">
         {/* Main Title / Brand Heading - Animates to top-left logo on Page 2 */}
         <div 
           ref={titleWrapperRef}

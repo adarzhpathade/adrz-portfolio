@@ -1,6 +1,6 @@
 # Memory — Adarsh'26 Portfolio (adrz)
 
-Last updated: 2026-09-26 (Refined desktop smooth scroll, increased Lenis duration & scrub, added custom auto-scroll from Hero to Section 2)
+Last updated: 2026-09-26 (Enhanced mobile experience: buttery smooth touch scroll, dynamic theme-color, dvh viewports, and cinematic blur transitions)
 
 ---
 
@@ -11,7 +11,7 @@ A cinematic, scroll-driven portfolio site built with **Next.js 16**, **GSAP**, *
 - **Live URL**: https://adrz-26.vercel.app  
 - **Repo**: https://github.com/adarzhpathade/adrz-portfolio  
 - **Main Branch**: `main`  
-- **Latest Commit**: `be17637` (`main` branch)
+- **Latest Commit**: TBD (committing mobile enhancements)
 
 ---
 
@@ -36,18 +36,18 @@ A cinematic, scroll-driven portfolio site built with **Next.js 16**, **GSAP**, *
 src/
 ├── app/
 │   ├── components/
-│   │   ├── Preloader.tsx     ← cinematic loader with GSAP exit morph & calibrated title gap
+│   │   ├── Preloader.tsx     ← cinematic loader with GSAP exit morph & calibrated title gap (100dvh base)
 │   │   ├── HeroSection.tsx   ← hero with ADARSH'26, shader, bio & 3-line reveal
 │   │   ├── Page2.tsx         ← unified WebGL LiquidGlassCarousel with responsive DPR, card sizing, and curve radius
-│   │   ├── Page3.tsx         ← 3D BoxCarousel with click-to-redirect + skills typography
+│   │   ├── Page3.tsx         ← 3D BoxCarousel with click-to-redirect, skills typography & blur exit transitions
 │   │   ├── Page4.tsx         ← footer / contact with interactive TechText "LET'S CREATE." wordmark & Gestalt colophon
 │   │   ├── GlobalNav.tsx     ← fixed nav with scroll-driven animations & responsive branding
 │   │   └── AboutCard.tsx     ← 3D floating drawer (light/dark adaptive)
-│   ├── globals.css           ← global styles, scrollbar hiding
-│   ├── layout.tsx            ← font loading, metadata, viewport, Analytics
-│   └── page.tsx              ← main orchestrator (scroll scrub, desktop section snapping, mobile swipe navigation)
+│   ├── globals.css           ← global styles, scrollbar hiding, overscroll bounce prevention
+│   ├── layout.tsx            ← font loading, metadata (PWA standalone), viewport, Analytics
+│   └── page.tsx              ← main orchestrator (scroll scrub, desktop/mobile auto-scroll, dynamic theme-color)
 ├── components/
-│   ├── SmoothScroll.tsx      ← Lenis provider with typed window.__lenis & GSAP lagSmoothing(500, 33)
+│   ├── SmoothScroll.tsx      ← Lenis provider with syncTouch and GSAP lagSmoothing(500, 33)
 │   ├── fancy/
 │   │   ├── carousel/box-carousel.tsx   ← 3D CSS cube with drag rotation & click-to-redirect
 │   │   └── text/letter-swap-pingpong-anim.tsx
@@ -77,115 +77,71 @@ src/
 
 ### 1. Scroll Orchestration & Snapping (`page.tsx`)
 - Single GSAP ScrollTrigger timeline scrubs all 4 pages via `#main-scroll-container` (`end: "+=600%"`).
-- **Desktop Section Auto-Scroll**: Native ScrollTrigger `snap` config was replaced by a custom intent-based threshold check in `onUpdate`. If the user scrolls past 70% of the Hero's exit animation (progress `0.28`), `window.__lenis.scrollTo(maxScroll * 0.35, { duration: 1.5 })` fires to gracefully auto-navigate to the start of Section 2.
+- **Desktop Section Auto-Scroll**: Uses intent-based threshold check in `onUpdate`. If the user scrolls past 70% of the Hero's exit animation (progress `0.28`), `lenis.scrollTo` fires to gracefully auto-navigate to the start of Section 2.
+- **Mobile Section Auto-Scroll**: Implemented buttery smooth auto-scrolls tailored for phone dimensions. Hero -> Projects auto-scrolls when crossing progress `0.22`, and Projects -> Skills auto-scrolls gracefully when passing `0.55`.
 - **Scroll Tuning**:
-  - Lenis configuration: `duration: 1.5` (up from 1.2), `wheelMultiplier: 0.9` for a weightier, cinematic feel.
-  - GSAP `scrub`: Increased to `1.2` on desktop timelines to introduce more noticeable animation lag for maximum fluidity.
-- **Mobile Touch Navigation**:
-  - Vertical swipe threshold set to `55px` (calibrated to reject accidental micro-drags and horizontal carousel interactions).
-  - Smooth glide via `lenis.scrollTo` with `duration: 0.9s` and `easeInOutQuad` easing (`t < 0.5 ? 2*t*t : 1 - (-2*t+2)^2 / 2`).
-  - Lockout period set to `1000ms`.
-  - Mobile GSAP scrub tuned to `0.6` for smooth tracking without lag.
-- **Theming**: `isDarkTheme` reactive state (`progress >= 0.24 && < 0.74` = light mode for Page 2 & Page 3 projects, dark mode elsewhere).
+  - Lenis configuration: `duration: 1.5`, `wheelMultiplier: 0.9` for a weightier, cinematic desktop feel. `syncTouch: true` with `touchMultiplier: 2` added for highly responsive mobile virtual scrolling.
+  - GSAP `scrub`: Increased to `1.2` on desktop timelines to introduce more noticeable animation lag for maximum fluidity. Mobile is tuned to `0.35` for snappy tracking.
 
-### 2. Unified WebGL Carousel on Page 2 (`Page2.tsx`)
+### 2. Enhanced Native Mobile View (PWA & Viewport)
+- **Dynamic Viewport Height**: Replaced all `h-screen` and `100vh` properties with `100dvh` (Dynamic Viewport Height) across the application. This prevents layout jarring and component shifting when the mobile browser's address bar collapses or expands on scroll.
+- **Dynamic Taskbar Theme**: A GSAP `onUpdate` hook in `page.tsx` dynamically modifies the `<meta name="theme-color">` to match the exact background color of the current section (Hero = `#000000`, Projects = `#ECECEC`, Skills = `#080808`), merging the browser UI with the design perfectly.
+- **Standalone PWA Mode**: Added `appleWebApp: { capable: true, statusBarStyle: "black-translucent" }` to `layout.tsx` so users can add the portfolio to their home screen to bypass the browser UI entirely.
+- **No Rubber-Band Bouncing**: Added `overscroll-behavior-y: none` to the global `html`/`body` to lock the scroll boundaries and prevent pulling past the top/bottom edges of the site.
+
+### 3. Unified WebGL Carousel on Page 2 (`Page2.tsx`)
 - Unified `LiquidGlassCarousel` on **all devices** (mobile, tablet, desktop), delivering the complete cinematic 3D video experience everywhere.
-- **Responsive Card Geometry**:
-  - `< 480px`: width `155px`, height `245px`, `gap: 4px`, `curveRadius: 600`, `cornerRadius: 12`.
-  - `< 640px`: width `175px`, height `280px`, `gap: 4px`, `curveRadius: 600`, `cornerRadius: 12`.
-  - `< 768px`: width `200px`, height `320px`, `gap: 4px`, `curveRadius: 600`, `cornerRadius: 12`.
-  - `>= 768px`: dynamic aspect ratio calculation, `gap: Math.round(cardWidth * 0.125)`, `curveRadius: 0` (default 1200), `cornerRadius: 18`.
-- **Mobile Arc Calibration**:
-  - Tightened cylinder curvature radius from default 1200 to `600` on mobile (< 210px card width) combined with `gap: 4px`. This keeps neighboring cards clustered naturally within the mobile viewport without excessive gap or awkward perspective divergence.
-- **Motion Tuning**:
-  - Mobile: `glide: 4.5`, `sensitivity: 8.0`, auto-scroll speed `45`, entry duration `0.7s`.
-  - Desktop: `glide: 6.8`, `sensitivity: 6.0`, auto-scroll speed `65`, entry duration `1.0s`.
-- Edge `GradualBlur` overlays (left & right) active across all screen sizes.
+- **Responsive Card Geometry**: Tightened cylinder curvature radius from default 1200 to `600` on mobile (< 210px card width) combined with `gap: 4px`. This keeps neighboring cards clustered naturally within the mobile viewport.
 
-### 3. Mobile Performance & Battery Optimization
+### 4. Cinematic Transitions & Effects
+- **Blur Exit (`Page3.tsx`)**: Upgraded the exit transitions on the Projects section (heading, bio text, and 3D cube) so that as they fade out, they simultaneously blur from `0px` to `12px`, creating an elegant depth-of-field transition into the Skills section.
+
+### 5. Mobile Performance & Battery Optimization
 - **`ReflectShader` Visibility Gating (`reflect-shader.tsx`)**:
-  - Previously, the animation frame loop ran continuously at 60fps offscreen (only skipping `gl.drawArrays` while still queuing `requestAnimationFrame`).
   - Resolved with an `IntersectionObserver` that terminates the rAF loop (`raf = 0`) when the canvas leaves viewport, and safely restarts (`startLoop()`) upon re-entry.
 - **`LiquidGlassCarousel` Visibility Gating (`liquid-glass-carousel-custom-style.tsx`)**:
-  - Added visibility observer hook to completely halt `tick()` when offscreen, preventing frame scheduling and CPU/GPU cycles when browsing other sections.
-  - Capped mobile device pixel ratio to `1.0` (`maxDpr = isMobile ? 1 : 2`), preventing massive 3x/4x fragment overdraw on high-DPI phone displays.
-  - Disabled WebGL antialiasing on mobile (`antialias: !isMobile`).
+  - Added visibility observer hook to completely halt `tick()` when offscreen. Capped mobile device pixel ratio to `1.0` and disabled WebGL antialiasing on mobile.
 - **SmoothScroll GSAP Lag Smoothing (`SmoothScroll.tsx`)**:
-  - Re-enabled GSAP lag smoothing at `gsap.ticker.lagSmoothing(500, 33)` (was previously 0), preventing sudden visual jumps when background threads cause momentary frame drops.
-
-### 4. Page 4 Interactive Wordmark & Layout (`Page4.tsx`, `TechText.tsx`)
-- Integrated interactive canvas `TechText` for the headline: `"LET'S CREATE."`.
-  - Features particle specks, dash strokes, letter reveal, and sweep animation.
-  - `draggable={false}` to maintain stable page interaction.
-  - Responsive container height: `h-[clamp(130px,22vh,260px)]` with `-my-1 sm:my-0`.
-- **Canvas Layout & Text Fit Fix (`TechText.tsx`)**:
-  - Standard Canvas 2D `actualBoundingBoxLeft` + `actualBoundingBoxRight` diverges from glyph advance width when `letterSpacing` is negative (`-0.04`).
-  - `ensureLayout` was enhanced to use `Math.max(boundingBoxWidth, advanceWidth)` for fit calculation and canvas centering, eliminating letter clipping on wide and narrow viewports alike.
-- **Email Typography Link**:
-  - Directly follows wordmark with minimal gap (`mt-1 sm:mt-2`).
-  - Interactive `LetterSwapPingPong` animation on hover.
-- **Mobile Footer Hierarchy**:
-  - Single-line headline `"Got a project? Let’s talk."`.
-  - Gestalt grouping: links (`LINKEDIN`, `GITHUB`) grouped with `gap-1`, separated by `mt-6` from colophon.
-
-### 5. Preloader System (`Preloader.tsx`)
-- **Asset Readiness**: Waits for `document.readyState`, `document.fonts.ready`, and all DOM images with 3.5s safety fallback.
-- **Progress Counter**: Positioned as sibling of backdrop, direct DOM ref (`counterNumberRef`) for zero React re-renders during count-up.
-- **Exit Morph**: Backdrop shrinks `100vh → 80vh`, `ADARSH'26` scales to `1.0` and glides to `y: 0`.
-- **Gap Calibration**: Resting Y `44vh` (mobile) / `43.5vh` (desktop) maintaining ~18–20px vertical gap with subtitle.
-
-### 6. Page 3 3D Box Carousel (`box-carousel.tsx`)
-- 4-face CSS 3D cube alternating Sentinel and Adarsh'26 projects.
-- Click-to-redirect to live URLs with `hypot(deltaX, deltaY) > 6px` drag disambiguation and 150ms post-drag lock.
-- Keyboard navigation (`Enter` and `Space`).
+  - Maintained `gsap.ticker.lagSmoothing(500, 33)` (fixing a bug where it was mistakenly set to 0). This prevents sudden visual jumps when background threads cause momentary frame drops or when the user violently reverses their scroll direction.
 
 ---
 
 ## Decisions & Patterns
 
-1. **Unified Experience over Separate Forked Codebases**:
-   - Instead of maintaining a separate CSS cylinder carousel on mobile with static images, unified the WebGL `LiquidGlassCarousel` across all screens with adaptive DPR (1.0 on mobile, 2.0 on desktop), disabled antialias on mobile, and responsive geometry/curvature.
-2. **Complete rAF Termination on Offscreen Elements**:
-   - Skipping the draw call in an active rAF loop still incurs 60fps frame scheduling overhead. Halting rAF loops via `IntersectionObserver` when elements leave the viewport ensures near-zero GPU and CPU consumption when off-screen.
-3. **Desktop Snap + Mobile Intent-Based Navigation**:
-   - Desktop uses continuous GSAP ScrollTrigger snapping (`snapTo` array with ease `power2.inOut`).
-   - Mobile uses vertical swipe intent detection (`threshold = 55px`) with `lenis.scrollTo` smooth gliding and horizontal touch gesture immunity.
-4. **Canvas Text Layout Calibration**:
-   - When using negative `letterSpacing` in Canvas 2D contexts, advance width (`measureText.width`) and bounding box metrics (`actualBoundingBoxRight + actualBoundingBoxLeft`) behave differently across font renderers; taking `Math.max()` ensures full glyph containment.
+1. **Mobile Experience as a First-Class Citizen**:
+   - Rather than just making the desktop design fit on a phone, we adopted native app patterns (`100dvh`, dynamic taskbar colors, PWA manifest, and `syncTouch: true`) to make the browser melt away.
+2. **Unified WebGL Experience**:
+   - Maintained the WebGL `LiquidGlassCarousel` across all screens with adaptive DPR (1.0 on mobile, 2.0 on desktop) instead of maintaining a separate CSS cylinder fallback.
+3. **Intent-Based Auto Scrolling vs Strict Snapping**:
+   - Desktop and Mobile both use continuous GSAP ScrollTrigger timelines but employ a bespoke `onUpdate` threshold auto-scroll (`lenis.scrollTo()`) specifically for jumping between massive sections (Hero -> Projects -> Skills) to give a guided, editorial feel without locking the user's scrollbar.
 
 ---
 
 ## Problems Solved
 
-1. **Mobile Lag and GPU Overheating**:
-   - Root cause: Multiple un-throttled rAF loops (`ReflectShader` on Hero + Page 4, `LiquidGlassCarousel` on Page 2) running concurrently at 60fps + high DPR fragment shading + `lagSmoothing(0)` causing frame spikes.
-   - Solution: Stopped rAF loops when offscreen via `IntersectionObserver`, capped mobile DPR at 1, disabled antialias on mobile, and set `lagSmoothing(500, 33)`.
-2. **Mobile Section Snap Sensitivity & Sluggishness**:
-   - Root cause: 22px swipe threshold triggered on accidental touch movements; 1.4s glide duration with 1.45s lockout felt slow and unresponsive.
-   - Solution: Increased swipe threshold to 55px, reduced transition duration to 0.9s (`easeInOutQuad`), and reduced lockout to 1000ms.
-3. **Card Gap and 3D Perspective on Mobile Carousel**:
-   - Root cause: Desktop curve radius (1200) pushed mobile cards too far back into z-space, creating large perceived visual gaps even when `gap` was small.
-   - Solution: Set `curveRadius: 600` and `gap: 4px` on mobile (< 210px card width), producing a tight, cohesive cylindrical arc.
-4. **Page 4 TechText Clipping & Extra Drag Behavior**:
-   - Root cause: Canvas bounding box metric did not account for negative letter spacing causing trailing character clipping; drag interaction conflicted with page scroll.
-   - Solution: Disabled dragging (`draggable={false}`) and computed width using `Math.max(boundingBoxWidth, advanceWidth)`.
-5. **Desktop Scroll Dynamics**:
-   - Root cause: Standard snapping felt too rigid and the scroll animation tracked the mouse too 1:1, making it lack a premium "cinematic" heaviness.
-   - Solution: Increased Lenis `duration` to 1.5, GSAP `scrub` to 1.2, and replaced the native `snapTo` array with a bespoke `onUpdate` threshold auto-scroll (`lenis.scrollTo()`) specifically for the Hero -> Page 2 transition.
+1. **Jittery Reverse Scroll & Sudden Jumps**:
+   - Root cause: `lagSmoothing(0)` in `SmoothScroll.tsx` forced GSAP to calculate exact elapsed deltas even after heavy thread stalling, causing massive jumps or visual stutter when reversing direction quickly.
+   - Solution: Restored `gsap.ticker.lagSmoothing(500, 33)`.
+2. **Mobile Viewport Bouncing & URL Bar Layout Shifts**:
+   - Root cause: Mobile browsers recalculate `100vh` constantly as the UI hides/shows. iOS defaults to rubber-banding at the edges.
+   - Solution: Deployed `100dvh` everywhere and locked `overscroll-behavior-y: none`.
+3. **Clunky Mobile Scroll Feel**:
+   - Root cause: Native scroll was fighting the heavy GSAP scrub, making the experience feel rigid on touch screens.
+   - Solution: Hijacked the touch scroll with `syncTouch: true` and amplified it with `touchMultiplier: 2`, then added smart `onUpdate` auto-scroll breakpoints to glide the user into the sections.
 
 ---
 
 ## Current State
 
 - **Build**: `npm run build` / Turbopack clean, 0 errors.
-- **Lint**: `npx eslint` passes with 0 errors (3 warnings on pre-existing legacy files).
+- **Lint**: `npx eslint` passes with 0 errors.
 - **TypeScript**: `npx tsc --noEmit` passes with 0 errors.
-- **Git**: Staged and committed to `main` branch.
+- **Git**: Committing mobile native enhancements & blur animations to `main`.
 - **Live URL**: https://adrz-26.vercel.app
 
 ---
 
 ## Next Session Starts With
 
-1. Test live deployment on physical mobile devices (iOS Safari / Android Chrome) to verify touch glide fluidity and GPU thermal levels.
+1. Test live deployment on physical mobile devices (iOS Safari / Android Chrome) to verify `dvh` changes and dynamic Chrome taskbar updates.
 2. Optional: Clean up legacy unused `src/components/ui/cylinder-carousel.tsx` if no longer required as a fallback.

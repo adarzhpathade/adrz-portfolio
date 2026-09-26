@@ -281,7 +281,7 @@ export default function Preloader({ onStartExit, onComplete }: PreloaderProps) {
       {/* Black backdrop — starts at 100vh, lifts to 80vh to match hero rectangle */}
       <div
         ref={backdropRef}
-        className="absolute top-0 left-0 w-full h-screen bg-[#080808] overflow-hidden"
+        className="absolute top-0 left-0 w-full h-[100dvh] bg-[#080808] overflow-hidden"
       >
         {/* Mirrored Hero Content Container (80vh relative bounds) */}
         <div className="relative w-full h-[80vh] flex flex-col justify-between pt-0 pb-4 pointer-events-none">

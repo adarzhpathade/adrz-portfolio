@@ -154,7 +154,7 @@ export default function HeroSection({
     <section 
       ref={sectionRef} 
       id="hero" 
-      className="absolute inset-0 z-20 w-full h-full min-h-screen flex flex-col items-center justify-start overflow-hidden bg-black text-white"
+      className="absolute inset-0 z-20 w-full h-full min-h-[100dvh] flex flex-col items-center justify-start overflow-hidden bg-black text-white"
     >
       {/* Background: lightweight Canvas 2D Waves on mobile (< 768px), WebGL ReflectShader on desktop */}
       <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">

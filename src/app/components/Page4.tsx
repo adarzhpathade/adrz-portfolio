@@ -21,7 +21,7 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
     <footer
       ref={ref}
       id="contact"
-      className="relative w-full h-full min-h-screen flex flex-col justify-between items-center overflow-hidden bg-black text-white select-none"
+      className="relative w-full h-full min-h-[100dvh] flex flex-col justify-between items-center overflow-hidden bg-black text-white select-none"
     >
       {/* Animated background: lightweight Canvas 2D Waves on mobile (< 768px), WebGL ReflectShader on desktop */}
       <div className="absolute inset-0 z-0 w-full h-full overflow-hidden pointer-events-none">
@@ -59,7 +59,7 @@ const Page4 = forwardRef<HTMLElement, Page4Props>(function Page4(
       </div>
 
       {/* Main Content Layer with mix-blend-difference — exactly as in Hero */}
-      <div className="relative z-20 mix-blend-difference w-full h-full min-h-screen flex flex-col justify-between items-center px-4 sm:px-8 md:px-12 pt-[6vh] pb-[max(4vh,env(safe-area-inset-bottom,20px))] pointer-events-none text-white max-w-[1600px] mx-auto">
+      <div className="relative z-20 mix-blend-difference w-full h-full min-h-[100dvh] flex flex-col justify-between items-center px-4 sm:px-8 md:px-12 pt-[6vh] pb-[max(4vh,env(safe-area-inset-bottom,20px))] pointer-events-none text-white max-w-[1600px] mx-auto">
         
         {/* Top spacer for GlobalNav clearance */}
         <div className="w-full shrink-0 h-4 sm:h-6" />
