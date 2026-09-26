@@ -10,7 +10,8 @@ A cinematic, scroll-driven portfolio site built with **Next.js 16**, **GSAP**, *
 
 - **Live URL**: https://adrz-26.vercel.app  
 - **Repo**: https://github.com/adarzhpathade/adrz-portfolio  
-- **Main Branch**: `main`
+- **Main Branch**: `main`  
+- **Latest Commit**: `be17637` (`main` branch)
 
 ---
 
